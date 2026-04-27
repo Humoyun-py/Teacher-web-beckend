@@ -12,7 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 from attendance.models import Attendance
 from lessons.models import Lesson
-from videos.models import VideoProof
+from photos.models import PhotoProof
 from teachers.models import Teacher
 
 class AdminDashboardAnalytics(APIView):
@@ -38,9 +38,9 @@ class AdminDashboardAnalytics(APIView):
         missed_lessons = today_lessons.filter(status='missed').count()
         in_progress = today_lessons.filter(status='in_progress').count()
         
-        # Videolar statistikasi
-        total_videos = VideoProof.objects.filter(lesson__date=today).count()
-        pending_videos = VideoProof.objects.filter(lesson__date=today, status='pending').count()
+        # Rasmlar statistikasi
+        total_photos = PhotoProof.objects.filter(lesson__date=today).count()
+        pending_photos = PhotoProof.objects.filter(lesson__date=today, status='pending').count()
 
         return Response({
             'teachers': {
@@ -56,9 +56,9 @@ class AdminDashboardAnalytics(APIView):
                 'missed': missed_lessons,
                 'in_progress': in_progress
             },
-            'videos': {
-                'total': total_videos,
-                'pending': pending_videos,
+            'photos': {
+                'total': total_photos,
+                'pending': pending_photos,
             }
         })
 

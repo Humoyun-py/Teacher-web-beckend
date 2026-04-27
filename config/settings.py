@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'teachers.apps.TeachersConfig',
     'lessons.apps.LessonsConfig',
     'attendance.apps.AttendanceConfig',
-    'videos.apps.VideosConfig',
+    'photos.apps.PhotosConfig',
     'analytics.apps.AnalyticsConfig',
     'notifications.apps.NotificationsConfig',
 ]
@@ -150,9 +150,8 @@ SWAGGER_SETTINGS = {
 QR_CODE_EXPIRY_MINUTES = 5
 LATE_THRESHOLD_MINUTES = 15
 
-# Video settings
-MAX_VIDEO_DURATION_SECONDS = 120  # 2 minutes
-MAX_VIDEO_SIZE_MB = 50
+# Photo settings
+MAX_PHOTO_SIZE_MB = 10
 
 # JWT settings
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)

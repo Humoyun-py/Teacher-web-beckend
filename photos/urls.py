@@ -1,13 +1,13 @@
-"""URL patterns for videos app."""
+"""URL patterns for photos app."""
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
-app_name = 'videos'
+app_name = 'photos'
 
 router = DefaultRouter()
-router.register('', views.VideoProofViewSet, basename='video')
+router.register('', views.PhotoProofViewSet, basename='photo')
 
 urlpatterns = [
     path('', include(router.urls)),

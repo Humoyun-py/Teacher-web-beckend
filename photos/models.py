@@ -1,6 +1,6 @@
 """
-Models for videos app.
-Video proof system for lesson verification.
+Models for photos app.
+Photo proof system for lesson verification.
 """
 
 from django.db import models
@@ -8,9 +8,8 @@ from django.conf import settings
 from teachers.models import Teacher
 from lessons.models import Lesson
 
-
-class VideoProof(models.Model):
-    """1-2 daqiqalik dars video isboti."""
+class PhotoProof(models.Model):
+    """Dars isboti sifatida yuboriladigan rasm."""
 
     class Status(models.TextChoices):
         PENDING = 'pending', 'Kutilmoqda'
@@ -19,26 +18,17 @@ class VideoProof(models.Model):
 
     teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE,
-        related_name='video_proofs',
+        related_name='photo_proofs',
         verbose_name='Teacher',
     )
     lesson = models.ForeignKey(
         Lesson, on_delete=models.CASCADE,
-        related_name='video_proofs',
+        related_name='photo_proofs',
         verbose_name='Dars',
     )
-    video = models.FileField(
-        upload_to='videos/%Y/%m/%d/',
-        verbose_name='Video fayl',
-    )
-    thumbnail = models.ImageField(
-        upload_to='video_thumbnails/%Y/%m/%d/',
-        null=True, blank=True,
-        verbose_name='Eskiz rasm',
-    )
-    duration_seconds = models.IntegerField(
-        default=0,
-        verbose_name='Davomiyligi (soniya)',
+    photo = models.ImageField(
+        upload_to='photos/%Y/%m/%d/',
+        verbose_name='Rasm fayli',
     )
     file_size_mb = models.FloatField(
         default=0,
@@ -54,7 +44,7 @@ class VideoProof(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='reviewed_videos',
+        related_name='reviewed_photos',
         verbose_name='Tekshiruvchi',
     )
     reviewed_at = models.DateTimeField(
@@ -71,12 +61,12 @@ class VideoProof(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Video isbot'
-        verbose_name_plural = 'Video isbotlar'
+        verbose_name = 'Rasm isbot'
+        verbose_name_plural = 'Rasm isbotlar'
         ordering = ['-uploaded_at']
 
     def __str__(self):
         return (
-            f"Video: {self.teacher.user.get_full_name()} - "
+            f"Rasm: {self.teacher.user.get_full_name()} - "
             f"{self.lesson.date} - {self.get_status_display()}"
         )
