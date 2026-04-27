@@ -6,8 +6,8 @@ from .models import QRCode, Attendance
 
 @admin.register(QRCode)
 class QRCodeAdmin(admin.ModelAdmin):
-    list_display = ['code', 'date', 'is_active', 'expires_at', 'created_at']
-    list_filter = ['is_active', 'date']
+    list_display = ['code', 'is_active', 'created_at']
+    list_filter = ['is_active']
 
 
 @admin.register(Attendance)

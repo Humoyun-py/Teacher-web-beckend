@@ -16,11 +16,7 @@ class QRCode(models.Model):
         default=uuid.uuid4, unique=True,
         verbose_name='QR Kod',
     )
-    date = models.DateField(verbose_name='Sana')
     is_active = models.BooleanField(default=True)
-    expires_at = models.DateTimeField(
-        verbose_name='Muddati tugash vaqti',
-    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -34,12 +30,9 @@ class QRCode(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"QR: {self.code} ({self.date})"
+        return f"QR: {self.code}"
 
-    @property
-    def is_expired(self):
-        from django.utils import timezone
-        return timezone.now() > self.expires_at
+
 
 
 class Attendance(models.Model):

@@ -17,7 +17,7 @@ class AttendanceApiTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         
         # Generete today qr
-        res = self.client.post('/api/v1/attendance/qrcodes/generate_today/')
+        res = self.client.post('/api/v1/attendance/qrcodes/generate_static/')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue('code' in res.data)
         qr_code = res.data['code']
@@ -33,8 +33,6 @@ class AttendanceApiTests(APITestCase):
         """Teacher yaratilgan QR kod bilan check-in qila olishi (POST)"""
         # Avval admin bitta QR yaratadi (qo'lda databazaga solamiz yoki funksiya)
         qr = QRCode.objects.create(
-            date=date.today(),
-            expires_at=timezone.now() + timedelta(hours=2),
             created_by=self.admin
         )
         

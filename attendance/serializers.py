@@ -11,30 +11,20 @@ from .models import QRCode, Attendance
 class QRCodeSerializer(serializers.ModelSerializer):
     """Serializer for QR Code."""
 
-    is_expired = serializers.BooleanField(read_only=True)
-
     class Meta:
         model = QRCode
         fields = [
-            'id', 'code', 'date', 'is_active', 'is_expired',
-            'expires_at', 'created_by', 'created_at',
+            'id', 'code', 'is_active',
+            'created_by', 'created_at',
         ]
         read_only_fields = ['code', 'created_by', 'created_at']
-
 
 class QRCodeCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating QR codes."""
 
     class Meta:
         model = QRCode
-        fields = ['date', 'expires_at']
-
-    def validate(self, data):
-        if data['expires_at'] <= timezone.now():
-            raise serializers.ValidationError(
-                'Tugash vaqti hozirgi vaqtdan keyin bo\'lishi kerak.'
-            )
-        return data
+        fields = []
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -75,9 +65,6 @@ class QRCheckInSerializer(serializers.Serializer):
 
         if not qr.is_active:
             raise serializers.ValidationError('QR kod faol emas.')
-
-        if qr.is_expired:
-            raise serializers.ValidationError('QR kod muddati tugagan.')
 
         return value
 

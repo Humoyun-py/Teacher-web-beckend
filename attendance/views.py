@@ -41,7 +41,7 @@ class QRCodeViewSet(viewsets.ModelViewSet):
     queryset = QRCode.objects.all()
     permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['date', 'is_active']
+    filterset_fields = ['is_active']
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -99,20 +99,16 @@ class QRCodeViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         method='post',
-        operation_description="Bugungi kun uchun tez QR kod yaratish",
+        operation_description="Yangi doimiy QR kod yaratish (Eskilarini o'chirib yuboradi)",
         tags=['QR Check-in (Admin)'],
     )
     @action(detail=False, methods=['post'])
-    def generate_today(self, request):
-        """Bugungi kun uchun QR kod yaratish."""
-        today = date.today()
-        expires_at = timezone.now() + timedelta(
-            minutes=settings.QR_CODE_EXPIRY_MINUTES
-        )
-
+    def generate_static(self, request):
+        """Bitta asosiy QR kod yaratish (hammasini o'chiradi va 1 ta yangi ochadi)."""
+        # Hamma eskilarni nofaol qilish
+        QRCode.objects.update(is_active=False)
+        
         qr = QRCode.objects.create(
-            date=today,
-            expires_at=expires_at,
             created_by=request.user,
         )
 
