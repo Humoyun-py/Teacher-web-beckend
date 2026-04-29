@@ -157,8 +157,8 @@ class QRCheckInView(APIView):
             )
 
         qr = QRCode.objects.get(code=serializer.validated_data['qr_code'])
-        now = timezone.now()
-        today = date.today()
+        now = timezone.localtime()
+        today = now.date()
 
         # Check if already checked in today
         existing = Attendance.objects.filter(
@@ -166,14 +166,19 @@ class QRCheckInView(APIView):
         ).first()
         if existing and existing.check_in_time:
             return Response(
-                {'error': 'Bugun allaqachon check-in qilingam.'},
+                {'error': 'Bugun allaqachon check-in qilingan.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Calculate if late
-        expected_time = timezone.make_aware(
-            datetime.combine(today, EXPECTED_ARRIVAL_TIME)
+        # EXPECTED_ARRIVAL_TIME is local time (8:00 AM)
+        expected_time = now.replace(
+            hour=EXPECTED_ARRIVAL_TIME.hour,
+            minute=EXPECTED_ARRIVAL_TIME.minute,
+            second=0,
+            microsecond=0
         )
+        
         is_late = now > expected_time + timedelta(
             minutes=settings.LATE_THRESHOLD_MINUTES
         )
@@ -263,7 +268,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def today(self, request):
         """Bugungi kelgan/kelmagan teacherlar."""
-        today = date.today()
+        today = timezone.localdate()
         all_teachers = Teacher.objects.filter(status='active')
         attended = Attendance.objects.filter(
             date=today,
@@ -319,7 +324,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[IsAdmin])
     def mark_absent(self, request):
         """Kelmaganlarni avtomatik belgilash."""
-        target_date = request.data.get('date', str(date.today()))
+        target_date = request.data.get('date', str(timezone.localdate()))
 
         try:
             target_date = datetime.strptime(target_date, '%Y-%m-%d').date()

@@ -138,7 +138,7 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def missing(self, request):
         date_from = request.query_params.get('date_from')
-        date_to = request.query_params.get('date_to', str(date.today()))
+        date_to = request.query_params.get('date_to', str(timezone.localdate()))
 
         lessons_with_photo = PhotoProof.objects.values_list('lesson_id', flat=True)
 
@@ -170,7 +170,7 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
         pending = PhotoProof.objects.filter(status='pending').count()
         accepted = PhotoProof.objects.filter(status='accepted').count()
         rejected = PhotoProof.objects.filter(status='rejected').count()
-        today = date.today()
+        today = timezone.localdate()
         today_total = PhotoProof.objects.filter(uploaded_at__date=today).count()
 
         return Response({

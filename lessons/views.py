@@ -285,7 +285,7 @@ class LessonViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def today(self, request):
         """Bugungi darslarni ko'rish."""
-        today = date.today()
+        today = timezone.localdate()
         queryset = self.get_queryset().filter(date=today)
         serializer = LessonSerializer(queryset, many=True)
         return Response(serializer.data)
