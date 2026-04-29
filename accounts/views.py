@@ -21,6 +21,23 @@ from .authentication import generate_access_token, generate_refresh_token
 from .permissions import IsAdmin
 
 
+class AuthRootView(APIView):
+    """Auth API endpoints ro'yxati."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({
+            'message': 'Auth API root',
+            'endpoints': {
+                'login': '/api/v1/auth/login/',
+                'register': '/api/v1/auth/register/ (Admin only)',
+                'refresh': '/api/v1/auth/refresh/',
+                'profile': '/api/v1/auth/profile/',
+                'change-password': '/api/v1/auth/change-password/',
+            }
+        })
+
+
 class RegisterView(APIView):
     """Yangi foydalanuvchi ro'yxatdan o'tkazish (faqat admin)."""
 

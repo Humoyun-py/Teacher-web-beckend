@@ -9,6 +9,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from .views import api_root
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -54,6 +55,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
     # API endpoints
+    path('api/v1/', api_root, name='api-root'),
     path('api/v1/auth/', include('accounts.urls')),
     path('api/v1/teachers/', include('teachers.urls')),
     path('api/v1/lessons/', include('lessons.urls')),
@@ -61,6 +63,9 @@ urlpatterns = [
     path('api/v1/photos/', include('photos.urls')),
     path('api/v1/analytics/', include('analytics.urls')),
     path('api/v1/notifications/', include('notifications.urls')),
+
+    # Browser login for API
+    path('api-auth/', include('rest_framework.urls')),
 ]
 
 if settings.DEBUG:
