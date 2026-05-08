@@ -1,4 +1,4 @@
-const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1';
+const BASE_URL = 'https://teacher-web-beckend-1.onrender.com/api/v1'; // Backend URL
 
 // ─── Token yangilash ──────────────────────────────────────────────────────────
 let isRefreshing = false;
