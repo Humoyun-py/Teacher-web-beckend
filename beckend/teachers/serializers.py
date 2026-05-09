@@ -175,15 +175,18 @@ class TeacherListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for teacher lists."""
 
     full_name = serializers.SerializerMethodField()
+    first_name = serializers.CharField(source='user.first_name', default='')
+    last_name = serializers.CharField(source='user.last_name', default='')
     username = serializers.CharField(source='user.username')
-    phone = serializers.CharField(source='user.phone')
+    phone = serializers.CharField(source='user.phone', allow_blank=True, default='')
+    is_active = serializers.BooleanField(source='user.is_active', read_only=True)
 
     class Meta:
         model = Teacher
         fields = [
-            'id', 'employee_id', 'full_name', 'username',
-            'phone', 'status', 'created_at',
+            'id', 'employee_id', 'full_name', 'first_name', 'last_name',
+            'username', 'phone', 'status', 'is_active', 'created_at',
         ]
 
     def get_full_name(self, obj):
-        return obj.user.get_full_name()
+        return obj.user.get_full_name() or obj.user.username

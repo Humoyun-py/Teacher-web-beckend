@@ -186,11 +186,9 @@ class TeacherViewSet(viewsets.ModelViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         teacher = self.get_object()
-        # Also deactivate the user account
-        teacher.user.is_active = False
-        teacher.user.save()
-        teacher.status = Teacher.Status.INACTIVE
-        teacher.save()
+        user = teacher.user
+        teacher.delete()   # Teacher profilini o'chirish
+        user.delete()      # User accountni ham o'chirish
         return Response(
             {'message': 'Teacher muvaffaqiyatli o\'chirildi.'},
             status=status.HTTP_200_OK,

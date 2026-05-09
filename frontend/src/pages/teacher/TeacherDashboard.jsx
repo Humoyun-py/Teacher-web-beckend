@@ -59,7 +59,14 @@ export default function TeacherDashboard() {
     if (!result?.length || isScanningRef.current || isCheckedIn) return;
     isScanningRef.current = true;
     setScanning(true);
-    const scannedData = result[0].rawValue;
+    let scannedData = result[0].rawValue;
+    
+    // Extract UUID if it's hidden inside a URL
+    const uuidMatch = scannedData.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (uuidMatch) {
+      scannedData = uuidMatch[0];
+    }
+    
     try {
       const res = await api.checkIn(scannedData);
       setIsCheckedIn(true);

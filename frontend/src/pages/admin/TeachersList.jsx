@@ -10,12 +10,16 @@ export default function TeachersList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '' });
 
-  const loadTeachers = () => {
+  const loadTeachers = async () => {
     setLoading(true);
-    api.getTeachers()
-      .then(res => setTeachers(res.results || []))
-      .catch(err => console.error("O'qituvchilarni yuklashda xatolik:", err))
-      .finally(() => setLoading(false));
+    try {
+      const res = await api.getTeachers();
+      setTeachers(res.results || res || []);
+    } catch (err) {
+      console.error("O'qituvchilarni yuklashda xatolik:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -30,10 +34,13 @@ export default function TeachersList() {
       await api.createTeacher({ ...newTeacher, employee_id });
       setShowModal(false);
       setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '' });
-      loadTeachers();
+      await loadTeachers(); // ✅ await bilan kutamiz
     } catch (err) {
-      console.error(err);
-      alert("Xatolik: " + (err.data ? JSON.stringify(err.data) : err.message));
+      console.error('Teacher yaratishda xato:', err);
+      const errMsg = err?.data
+        ? Object.entries(err.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
+        : (err?.message || 'Noma\'lum xatolik');
+      alert("❌ Xatolik:\n" + errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -43,9 +50,9 @@ export default function TeachersList() {
     if (!window.confirm("Rostdan ham ushbu o'qituvchini o'chirmoqchimisiz?")) return;
     try {
       await api.deleteTeacher(id);
-      setTeachers(teachers.filter(t => t.id !== id));
+      await loadTeachers(); // ✅ server'dan qayta yuklaymiz
     } catch (err) {
-      alert("Xatolik: " + (err.data ? JSON.stringify(err.data) : err.message));
+      alert("O'chirishda xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
     }
   };
 
