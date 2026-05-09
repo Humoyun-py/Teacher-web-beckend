@@ -14,8 +14,28 @@ export default function DashboardLayout({ role }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // ── Auth Guard ──────────────────────────────────────────────────────
+    const token = localStorage.getItem('access_token');
     const userStr = localStorage.getItem('user');
-    if (userStr) setUser(JSON.parse(userStr));
+
+    if (!token || !userStr) {
+      navigate('/', { replace: true });
+      return;
+    }
+
+    const parsedUser = JSON.parse(userStr);
+
+    // Role tekshiruvi: admin teacher sahifasida bo'lmasin va aksincha
+    if (role === 'admin' && parsedUser.role !== 'admin') {
+      navigate('/teacher', { replace: true });
+      return;
+    }
+    if (role === 'teacher' && parsedUser.role === 'admin') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    setUser(parsedUser);
 
     // Unread notifications soni
     api.getUnreadCount()

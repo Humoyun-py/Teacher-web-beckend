@@ -5,7 +5,7 @@ import { api } from '../../api';
 export default function TeachersList() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '' });
@@ -89,16 +89,16 @@ export default function TeachersList() {
               <tbody>
                 {teachers.length === 0 ? (
                   <tr>
-                     <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        Hech qanday o'qituvchi topilmadi
-                     </td>
+                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Hech qanday o'qituvchi topilmadi
+                    </td>
                   </tr>
                 ) : teachers.map(teacher => (
                   <tr key={teacher.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '1rem' }}>
                       <div className="flex-center gap-3" style={{ justifyContent: 'flex-start' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', overflow: 'hidden' }}>
-                          <img src={`https://ui-avatars.com/api/?name=${teacher.full_name || teacher.username}&background=6366f1&color=fff`} alt="" style={{width:'100%', height:'100%'}} />
+                          <img src={`https://ui-avatars.com/api/?name=${teacher.full_name || teacher.username}&background=6366f1&color=fff`} alt="" style={{ width: '100%', height: '100%' }} />
                         </div>
                         <div className="flex-col">
                           <span style={{ fontWeight: 500 }}>{teacher.full_name || `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Ism kiritilmagan'}</span>
@@ -140,18 +140,18 @@ export default function TeachersList() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <form onSubmit={handleCreateTeacher} className="flex-col gap-4">
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Ism (First Name)</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input required type="text" className="input-field" value={newTeacher.first_name} onChange={e => setNewTeacher({...newTeacher, first_name: e.target.value})} placeholder="Masalan: Sarvar" />
+                  <input required type="text" className="input-field" value={newTeacher.first_name} onChange={e => setNewTeacher({ ...newTeacher, first_name: e.target.value })} placeholder="Masalan: Sarvar" />
                   <button type="button" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }} onClick={() => {
                     if (!newTeacher.first_name) return alert("Avval Ismni kiriting!");
                     const base = (newTeacher.first_name + (newTeacher.last_name || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
                     const rNum = Math.floor(100 + Math.random() * 900);
                     const rPass = Math.floor(100000 + Math.random() * 900000);
-                    setNewTeacher({...newTeacher, username: `${base}${rNum}`, password: rPass.toString()});
+                    setNewTeacher({ ...newTeacher, username: `${base}${rNum}`, password: rPass.toString() });
                   }} title="Avtomatik login/parol yaratish">
                     ✨
                   </button>
@@ -159,19 +159,19 @@ export default function TeachersList() {
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Familiya (Last Name)</label>
-                <input required type="text" className="input-field" value={newTeacher.last_name} onChange={e => setNewTeacher({...newTeacher, last_name: e.target.value})} placeholder="Masalan: Boxodirov" />
+                <input required type="text" className="input-field" value={newTeacher.last_name} onChange={e => setNewTeacher({ ...newTeacher, last_name: e.target.value })} placeholder="Masalan: Boxodirov" />
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Login (Username)</label>
-                <input required type="text" className="input-field" value={newTeacher.username} onChange={e => setNewTeacher({...newTeacher, username: e.target.value})} placeholder="Masalan: alisher123" />
+                <input required type="text" className="input-field" value={newTeacher.username} onChange={e => setNewTeacher({ ...newTeacher, username: e.target.value })} placeholder="Masalan: alisher123" />
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Parol (Password)</label>
-                <input required type="text" className="input-field" value={newTeacher.password} onChange={e => setNewTeacher({...newTeacher, password: e.target.value})} placeholder="Kamida 6 ta belgi" />
+                <input required type="text" className="input-field" value={newTeacher.password} onChange={e => setNewTeacher({ ...newTeacher, password: e.target.value })} placeholder="Kamida 6 ta belgi" />
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Telefon Raqam</label>
-                <input required type="text" className="input-field" value={newTeacher.phone} onChange={e => setNewTeacher({...newTeacher, phone: e.target.value})} placeholder="+998 90 123 45 67" />
+                <input required type="text" className="input-field" value={newTeacher.phone} onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value })} placeholder="+998 90 123 45 67" />
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }} disabled={isSubmitting}>

@@ -1,4 +1,5 @@
-const BASE_URL = 'https://teacher-web-beckend-1.onrender.com/api/v1'; // Backend URL
+// const BASE_URL = 'https://teacher-web-beckend-1.onrender.com/api/v1'; // Production
+const BASE_URL = 'http://127.0.0.1:8000/api/v1'; // Local development
 
 // ─── Token yangilash ──────────────────────────────────────────────────────────
 let isRefreshing = false;
