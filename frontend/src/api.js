@@ -1,5 +1,5 @@
 // const BASE_URL = 'https://teacher-web-beckend-1.onrender.com/api/v1'; // Production
-const BASE_URL = 'https://teacher-web-beckend-1.onrender.com/api/v1'; // Local development
+const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1'; // Local development
 
 // ─── Token yangilash ──────────────────────────────────────────────────────────
 let isRefreshing = false;
