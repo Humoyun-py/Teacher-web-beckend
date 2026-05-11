@@ -19,14 +19,13 @@ export const refreshTokens = async () => {
   const res = await fetch(`${BASE_URL}/auth/refresh/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh: refresh }),
+    body: JSON.stringify({ refresh_token: refresh }),
   });
   if (!res.ok) throw new Error('Refresh failed');
   const data = await res.json();
-  // djangorestframework-simplejwt returns { access, refresh }
-  const newAccess = data.access || data.access_token;
+  // Backend returns { access_token }
+  const newAccess = data.access_token || data.access;
   if (newAccess) localStorage.setItem('access_token', newAccess);
-  if (data.refresh || data.refresh_token) localStorage.setItem('refresh_token', data.refresh || data.refresh_token);
   return newAccess;
 };
 
@@ -45,8 +44,8 @@ export const request = async (endpoint, options = {}, retry = true) => {
     headers,
   });
 
-  // 401 → token yangilash
-  if (response.status === 401 && retry) {
+  // 401 or 403 → token yangilash
+  if ((response.status === 401 || response.status === 403) && retry) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({
