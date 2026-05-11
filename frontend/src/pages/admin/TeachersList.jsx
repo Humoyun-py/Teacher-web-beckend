@@ -82,15 +82,15 @@ export default function TeachersList() {
             <p className="text-muted">Bazadan yuklanmoqda...</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="table-container" style={{ marginTop: '1rem' }}>
+            <table className="table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--surface-border)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '1rem' }}>O'qituvchi logini (I.O.F)</th>
-                  <th style={{ padding: '1rem' }}>Username (Login)</th>
-                  <th style={{ padding: '1rem' }}>Telefon raqami</th>
-                  <th style={{ padding: '1rem' }}>Status</th>
-                  <th style={{ padding: '1rem' }}>Amallar</th>
+                <tr>
+                  <th>O'qituvchi logini (I.O.F)</th>
+                  <th>Username (Login)</th>
+                  <th>Telefon raqami</th>
+                  <th>Status</th>
+                  <th>Amallar</th>
                 </tr>
               </thead>
               <tbody>
@@ -101,8 +101,8 @@ export default function TeachersList() {
                     </td>
                   </tr>
                 ) : teachers.map(teacher => (
-                  <tr key={teacher.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '1rem' }}>
+                  <tr key={teacher.id}>
+                    <td>
                       <div className="flex-center gap-3" style={{ justifyContent: 'flex-start' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', overflow: 'hidden' }}>
                           <img src={`https://ui-avatars.com/api/?name=${teacher.full_name || teacher.username}&background=6366f1&color=fff`} alt="" style={{ width: '100%', height: '100%' }} />
@@ -113,14 +113,14 @@ export default function TeachersList() {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>@{teacher.username}</td>
-                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{teacher.phone || '-'}</td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ color: 'var(--text-muted)' }}>@{teacher.username}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{teacher.phone || '-'}</td>
+                    <td>
                       <span className={`badge ${teacher.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
                         {teacher.status || 'active'}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem' }}>
+                    <td>
                       <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
                         <button className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--accent)', borderColor: 'var(--surface-border)' }} title="Tahrirlash">
                           <Edit size={16} />

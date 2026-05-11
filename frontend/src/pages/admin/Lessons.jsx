@@ -29,7 +29,7 @@ export default function Lessons() {
       if (filter) params += `&status=${filter}`;
       if (dateFilter) params += `&date=${dateFilter}`;
       const res = await api.getLessons(params);
-      setLessons(res.results || []);
+      setLessons(Array.isArray(res) ? res : res.results || []);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
@@ -114,7 +114,7 @@ export default function Lessons() {
       </div>
 
       {/* Lessons Table */}
-      <div className="glass" style={{ padding: '1.5rem', flex: 1, overflow: 'auto' }}>
+      <div className="table-container glass" style={{ flex: 1, marginTop: '1rem' }}>
         {loading ? (
           <div className="flex-center flex-col gap-3" style={{ padding: '3rem' }}>
             <Loader className="spinner" size={36} color="var(--primary)" />
@@ -126,32 +126,32 @@ export default function Lessons() {
             <p className="text-muted">Darslar topilmadi</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--surface-border)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>Fan / Sinf</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>O'qituvchi</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>Sana</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>Vaqt</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>Status</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'left' }}>Amallar</th>
+              <tr>
+                <th>Fan / Sinf</th>
+                <th>O'qituvchi</th>
+                <th>Sana</th>
+                <th>Vaqt</th>
+                <th>Status</th>
+                <th>Amallar</th>
               </tr>
             </thead>
             <tbody>
               {lessons.map(lesson => (
-                <tr key={lesson.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
+                <tr key={lesson.id}>
+                  <td>
                     <div style={{ fontWeight: 500 }}>{lesson.subject_name || lesson.subject || '—'}</div>
                     <div className="text-muted" style={{ fontSize: '0.78rem' }}>{lesson.class_name || lesson.school_class || '—'}</div>
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>
+                  <td style={{ color: 'var(--text-muted)' }}>
                     {lesson.teacher_name || '—'}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                  <td style={{ color: 'var(--text-muted)' }}>
                     {lesson.date || '—'}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem' }}>
-                    <div className="flex-center gap-1">
+                  <td>
+                    <div className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
                       <Clock size={12} color="var(--text-muted)" />
                       <span className="text-muted">
                         {lesson.start_time?.slice(0, 5)} – {lesson.end_time?.slice(0, 5)}
@@ -163,13 +163,13 @@ export default function Lessons() {
                       </div>
                     )}
                   </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
+                  <td>
                     <span className={`badge ${STATUS_COLORS[lesson.status] || 'badge-primary'}`}>
                       {STATUS_LABELS[lesson.status] || lesson.status}
                     </span>
                   </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <div className="flex-center gap-2">
+                  <td>
+                    <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
                       {lesson.status === 'scheduled' && (
                         <button
                           className="btn btn-primary"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, QrCode, Camera,
-  Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle
+  Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -57,6 +57,8 @@ export default function DashboardLayout({ role }) {
   const adminMenu = [
     { name: 'Dashboard',       path: '/admin',              icon: <LayoutDashboard size={20} /> },
     { name: "O'qituvchilar",   path: '/admin/teachers',     icon: <Users size={20} /> },
+    { name: 'Fanlar',          path: '/admin/subjects',     icon: <Library size={20} /> },
+    { name: 'Sinflar',         path: '/admin/classes',      icon: <GraduationCap size={20} /> },
     { name: 'Darslar',         path: '/admin/lessons',      icon: <BookOpen size={20} /> },
     { name: 'Dars Jadvali',    path: '/admin/schedule',     icon: <Calendar size={20} /> },
     { name: 'QR Nazorat',      path: '/admin/qr-checkin',   icon: <QrCode size={20} /> },

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, RefreshCw, ChevronLeft, ChevronRight, Clock, X, Check, Loader, BookOpen, Users } from 'lucide-react';
 import { api } from '../../api';
 
-const DAYS = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma'];
+const DAYS = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
 const DAY_NUM = { 1: 'Dushanba', 2: 'Seshanba', 3: 'Chorshanba', 4: 'Payshanba', 5: 'Juma', 6: 'Shanba', 0: 'Yakshanba' };
 
 export default function Schedule() {
@@ -125,7 +125,7 @@ export default function Schedule() {
       </div>
 
       {/* Schedule Grid by day */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1rem' }}>
         {DAYS.map((day, i) => (
           <div key={day} className="glass" style={{ padding: '1rem', minHeight: '200px' }}>
             <div style={{ marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--surface-border)' }}>

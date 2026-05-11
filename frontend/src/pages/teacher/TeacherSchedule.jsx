@@ -26,7 +26,7 @@ export default function TeacherSchedule() {
     setLoading(true);
     try {
       const res = await api.getLessons(`?date=${selectedDate}&ordering=start_time`);
-      setLessons(res.results || []);
+      setLessons(Array.isArray(res) ? res : res.results || []);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }

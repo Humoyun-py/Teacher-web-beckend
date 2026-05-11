@@ -14,6 +14,9 @@ import VideoReviewList  from './pages/admin/VideoReviewList';
 import Notifications    from './pages/admin/Notifications';
 import Settings         from './pages/admin/Settings';
 
+import Subjects         from './pages/admin/Subjects';
+import Classes          from './pages/admin/Classes';
+
 // Teacher pages
 import TeacherDashboard  from './pages/teacher/TeacherDashboard';
 import TeacherSchedule   from './pages/teacher/TeacherSchedule';
@@ -30,6 +33,8 @@ function App() {
         <Route path="/admin" element={<DashboardLayout role="admin" />}>
           <Route index            element={<AdminDashboard />} />
           <Route path="teachers"      element={<TeachersList />} />
+          <Route path="subjects"      element={<Subjects />} />
+          <Route path="classes"       element={<Classes />} />
           <Route path="lessons"       element={<Lessons />} />
           <Route path="schedule"      element={<Schedule />} />
           <Route path="qr-checkin"    element={<QRCheckinData />} />
