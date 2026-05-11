@@ -132,7 +132,7 @@ REST_FRAMEWORK = {
 # CORS
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    'CORS_ALLOWED_ORIGINS', 'http://localhost:3000'
+    'CORS_ALLOWED_ORIGINS', 'https://makatab-teacher-web.netlify.app/'
 ).split(',')
 
 # Swagger settings
