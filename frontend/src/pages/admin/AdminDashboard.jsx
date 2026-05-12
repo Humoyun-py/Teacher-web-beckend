@@ -157,9 +157,32 @@ export default function AdminDashboard() {
           </div>
           <div className="flex-col gap-3">
             {photos.length === 0 ? (
-              <div className="flex-center flex-col gap-2" style={{ padding: '1.5rem' }}>
-                <CheckCircle size={32} color="var(--success)" />
-                <p className="text-muted">Hamma rasmlar tekshirilgan ✅</p>
+              <div className="flex-center flex-col gap-4" style={{ 
+                padding: '3.5rem 2rem', 
+                background: 'linear-gradient(145deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.01) 100%)',
+                borderRadius: 'var(--radius-lg)', 
+                border: '1px dashed rgba(34,197,94,0.25)',
+                textAlign: 'center',
+                boxShadow: 'inset 0 0 20px rgba(34,197,94,0.03)'
+              }}>
+                <div style={{ 
+                  width: '76px', height: '76px', 
+                  background: 'linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.05))', 
+                  borderRadius: '50%', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 0 30px rgba(34,197,94,0.15), inset 0 0 15px rgba(34,197,94,0.2)',
+                  animation: 'pulse 3s infinite'
+                }}>
+                  <CheckCircle size={38} color="#22c55e" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 2px 5px rgba(34,197,94,0.4))' }} />
+                </div>
+                <div className="flex-col gap-1">
+                  <h4 style={{ color: '#4ade80', fontWeight: 600, fontSize: '1.2rem', letterSpacing: '0.5px', textShadow: '0 2px 10px rgba(74,222,128,0.2)' }}>
+                    Barchasi tasdiqlangan!
+                  </h4>
+                  <p className="text-muted" style={{ fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9 }}>
+                    Kutilayotgan rasmlar mavjud emas.<br/>Hamma rasmlar muvaffaqiyatli tekshirilgan.
+                  </p>
+                </div>
               </div>
             ) : (
               photos.map((photo, i) => (
