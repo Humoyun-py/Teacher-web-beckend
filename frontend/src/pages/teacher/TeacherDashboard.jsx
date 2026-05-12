@@ -200,7 +200,7 @@ export default function TeacherDashboard() {
             <div>
               <p className="text-muted" style={{ fontSize: '0.8rem' }}>Keyingi dars</p>
               <p style={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
-                {nextLesson ? nextLesson.time?.slice(0, 5) : '—'}
+                {nextLesson ? nextLesson.scheduled_start?.slice(0, 5) : '—'}
               </p>
               {nextLesson && (
                 <p className="text-muted" style={{ fontSize: '0.75rem' }}>{nextLesson.subject} — {nextLesson.class}</p>
@@ -290,7 +290,7 @@ export default function TeacherDashboard() {
                       </p>
                       <p className="text-muted" style={{ fontSize: '0.78rem', marginTop: '0.1rem' }}>
                         <Clock size={11} style={{ display: 'inline', marginRight: '3px' }} />
-                        {lesson.start_time?.slice(0, 5)} – {lesson.end_time?.slice(0, 5)}
+                        {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
                       </p>
                     </div>
                     <span className={`badge ${lesson.status === 'in_progress' ? 'badge-warning' : lesson.status === 'completed' ? 'badge-success' : lesson.status === 'missed' ? 'badge-danger' : 'badge-primary'}`} style={{ fontSize: '0.7rem' }}>

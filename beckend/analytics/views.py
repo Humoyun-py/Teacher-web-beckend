@@ -88,6 +88,6 @@ class TeacherDashboardAnalytics(APIView):
             'next_lesson': {
                 'subject': next_lesson.subject.name,
                 'class': next_lesson.school_class.name,
-                'time': next_lesson.scheduled_start
+                'scheduled_start': next_lesson.scheduled_start
             } if next_lesson else None,
         })
