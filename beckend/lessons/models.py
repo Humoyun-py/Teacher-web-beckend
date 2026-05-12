@@ -168,3 +168,35 @@ class Lesson(models.Model):
             f"{self.teacher.user.get_full_name()} | "
             f"{self.subject.name}"
         )
+
+    @classmethod
+    def generate_for_date(cls, target_date, teacher=None):
+        """Ma'lum sana (va ixtiyoriy teacher) uchun jadvaldan darslarni yaratish."""
+        from .models import LessonSchedule
+        day_of_week = target_date.isoweekday()
+        
+        schedules = LessonSchedule.objects.filter(
+            day_of_week=day_of_week,
+            is_active=True
+        )
+        if teacher:
+            schedules = schedules.filter(teacher=teacher)
+            
+        created_count = 0
+        for sch in schedules:
+            _, created = cls.objects.get_or_create(
+                teacher=sch.teacher,
+                date=target_date,
+                scheduled_start=sch.start_time,
+                defaults={
+                    'schedule': sch,
+                    'subject': sch.subject,
+                    'school_class': sch.school_class,
+                    'scheduled_end': sch.end_time,
+                    'room': sch.room,
+                }
+            )
+            if created:
+                created_count += 1
+        return created_count
+

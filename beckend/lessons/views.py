@@ -362,38 +362,10 @@ class LessonViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        day_of_week = target_date.isoweekday()  # 1=Monday, 7=Sunday
-        schedules = LessonSchedule.objects.filter(
-            day_of_week=day_of_week, is_active=True,
-        )
-
-        created = []
-        skipped = []
-        for schedule in schedules:
-            lesson, was_created = Lesson.objects.get_or_create(
-                teacher=schedule.teacher,
-                date=target_date,
-                scheduled_start=schedule.start_time,
-                defaults={
-                    'schedule': schedule,
-                    'subject': schedule.subject,
-                    'school_class': schedule.school_class,
-                    'scheduled_end': schedule.end_time,
-                    'room': schedule.room,
-                },
-            )
-            if was_created:
-                created.append(LessonSerializer(lesson).data)
-            else:
-                skipped.append({
-                    'id': lesson.id,
-                    'reason': 'Allaqachon mavjud',
-                })
+        count = Lesson.generate_for_date(target_date)
 
         return Response({
             'date': str(target_date),
-            'created_count': len(created),
-            'skipped_count': len(skipped),
-            'created': created,
-            'skipped': skipped,
+            'created_count': count,
+            'message': f"{count} ta dars jadvaldan yaratildi.",
         })
