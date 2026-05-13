@@ -358,7 +358,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
         except ValueError:
             return Response(
-                {'error': 'Sana formati noto\'g\'ri. YYYY-MM-eDD ishlatilsin.'},
+                {'error': 'Sana formati noto\'g\'ri. YYYY-MM-DD ishlatilsin.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

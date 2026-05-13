@@ -54,7 +54,7 @@ export default function TeachersList() {
         const updateData = { ...newTeacher };
         if (!updateData.password) delete updateData.password; // Agar parol kiritilmagan bo'lsa uni yubormaymiz
         
-        await api.updateTeacher(editingTeacher.id, updateData);
+        await api.patchTeacher(editingTeacher.id, updateData);
       } else {
         // Yangi yaratish
         const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
