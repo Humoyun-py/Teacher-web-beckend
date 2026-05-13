@@ -7,6 +7,7 @@ export default function TeachersList() {
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '' });
 
@@ -26,17 +27,46 @@ export default function TeachersList() {
     loadTeachers();
   }, []);
 
-  const handleCreateTeacher = async (e) => {
+  const handleEditClick = (teacher) => {
+    setEditingTeacher(teacher);
+    setNewTeacher({
+      first_name: teacher.first_name || '',
+      last_name: teacher.last_name || '',
+      username: teacher.username || '',
+      password: '', // Parolni bo'sh qoldiramiz tahrirlashda
+      phone: teacher.phone || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingTeacher(null);
+    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '' });
+    setShowModal(true);
+  };
+
+  const handleSaveTeacher = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
-      await api.createTeacher({ ...newTeacher, employee_id });
+      if (editingTeacher) {
+        // Tahrirlash
+        const updateData = { ...newTeacher };
+        if (!updateData.password) delete updateData.password; // Agar parol kiritilmagan bo'lsa uni yubormaymiz
+        
+        await api.updateTeacher(editingTeacher.id, updateData);
+      } else {
+        // Yangi yaratish
+        const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
+        await api.createTeacher({ ...newTeacher, employee_id });
+      }
+      
       setShowModal(false);
       setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '' });
-      await loadTeachers(); // ✅ await bilan kutamiz
+      setEditingTeacher(null);
+      await loadTeachers();
     } catch (err) {
-      console.error('Teacher yaratishda xato:', err);
+      console.error('Teacher saqlashda xato:', err);
       const errMsg = err?.data
         ? Object.entries(err.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
         : (err?.message || 'Noma\'lum xatolik');
@@ -50,7 +80,7 @@ export default function TeachersList() {
     if (!window.confirm("Rostdan ham ushbu o'qituvchini o'chirmoqchimisiz?")) return;
     try {
       await api.deleteTeacher(id);
-      await loadTeachers(); // ✅ server'dan qayta yuklaymiz
+      await loadTeachers();
     } catch (err) {
       alert("O'chirishda xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
     }
@@ -63,7 +93,7 @@ export default function TeachersList() {
           <h1 className="heading-2">O'qituvchilar ro'yxati</h1>
           <p className="text-muted">Haqiqiy baza orqali bog'langan tizim</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={handleOpenCreateModal}>
           <Plus size={18} /> Yangi Qo'shish
         </button>
       </div>
@@ -122,7 +152,12 @@ export default function TeachersList() {
                     </td>
                     <td>
                       <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
-                        <button className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--accent)', borderColor: 'var(--surface-border)' }} title="Tahrirlash">
+                        <button 
+                          onClick={() => handleEditClick(teacher)}
+                          className="btn-outline flex-center" 
+                          style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--accent)', borderColor: 'var(--surface-border)' }} 
+                          title="Tahrirlash"
+                        >
                           <Edit size={16} />
                         </button>
                         <button onClick={() => handleDeleteTeacher(teacher.id)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--surface-border)' }} title="O'chirish">
@@ -142,26 +177,28 @@ export default function TeachersList() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="glass" style={{ width: '100%', maxWidth: '400px', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
             <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
-              <h2 className="heading-3">Yangi O'qituvchi qo'shish</h2>
+              <h2 className="heading-3">{editingTeacher ? "O'qituvchi ma'lumotlarini tahrirlash" : "Yangi O'qituvchi qo'shish"}</h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTeacher} className="flex-col gap-4">
+            <form onSubmit={handleSaveTeacher} className="flex-col gap-4">
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Ism (First Name)</label>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input required type="text" className="input-field" value={newTeacher.first_name} onChange={e => setNewTeacher({ ...newTeacher, first_name: e.target.value })} placeholder="Masalan: Sarvar" />
-                  <button type="button" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }} onClick={() => {
-                    if (!newTeacher.first_name) return alert("Avval Ismni kiriting!");
-                    const base = (newTeacher.first_name + (newTeacher.last_name || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const rNum = Math.floor(100 + Math.random() * 900);
-                    const rPass = Math.floor(100000 + Math.random() * 900000);
-                    setNewTeacher({ ...newTeacher, username: `${base}${rNum}`, password: rPass.toString() });
-                  }} title="Avtomatik login/parol yaratish">
-                    ✨
-                  </button>
+                  {!editingTeacher && (
+                    <button type="button" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }} onClick={() => {
+                      if (!newTeacher.first_name) return alert("Avval Ismni kiriting!");
+                      const base = (newTeacher.first_name + (newTeacher.last_name || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+                      const rNum = Math.floor(100 + Math.random() * 900);
+                      const rPass = Math.floor(100000 + Math.random() * 900000);
+                      setNewTeacher({ ...newTeacher, username: `${base}${rNum}`, password: rPass.toString() });
+                    }} title="Avtomatik login/parol yaratish">
+                      ✨
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="input-group">
@@ -170,11 +207,11 @@ export default function TeachersList() {
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Login (Username)</label>
-                <input required type="text" className="input-field" value={newTeacher.username} onChange={e => setNewTeacher({ ...newTeacher, username: e.target.value })} placeholder="Masalan: alisher123" />
+                <input required disabled={!!editingTeacher} type="text" className="input-field" value={newTeacher.username} onChange={e => setNewTeacher({ ...newTeacher, username: e.target.value })} placeholder="Masalan: alisher123" />
               </div>
               <div className="input-group">
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Parol (Password)</label>
-                <input required type="text" className="input-field" value={newTeacher.password} onChange={e => setNewTeacher({ ...newTeacher, password: e.target.value })} placeholder="Kamida 6 ta belgi" />
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Parol (Password) {editingTeacher && "(O'zgartirish ixtiyoriy)"}</label>
+                <input required={!editingTeacher} type="text" className="input-field" value={newTeacher.password} onChange={e => setNewTeacher({ ...newTeacher, password: e.target.value })} placeholder={editingTeacher ? "O'zgartirmaslik uchun bo'sh qoldiring" : "Kamida 6 ta belgi"} />
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Telefon Raqam</label>
@@ -182,7 +219,7 @@ export default function TeachersList() {
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }} disabled={isSubmitting}>
-                {isSubmitting ? "Yaratilmoqda..." : "Saqlash va Yaratish"}
+                {isSubmitting ? (editingTeacher ? "Yangilanmoqda..." : "Yaratilmoqda...") : (editingTeacher ? "Saqlash va Yangilash" : "Saqlash va Yaratish")}
               </button>
             </form>
           </div>
