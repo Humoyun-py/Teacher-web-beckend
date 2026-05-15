@@ -28,7 +28,7 @@ export default function TeacherDashboard() {
       try {
         const [dash, todayAtt, lessons] = await Promise.allSettled([
           api.getTeacherDashboard(),
-          api.getAttendanceToday(),
+          api.getAttendanceLogs(`?date=${new Date().toISOString().split('T')[0]}`),
           api.getLessonsToday(),
         ]);
 
