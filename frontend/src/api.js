@@ -1,5 +1,8 @@
-// const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1'; // Production
-const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1'; // Local development
+// ─── Avtomatik URL aniqlash ───────────────────────────────────────────────────
+// Localhost'da ishlayotgan bo'lsa → lokal backend, aks holda → Render production
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8000/api/v1'
+  : 'https://teacher-web-beckend.onrender.com/api/v1';
 
 // ─── Token yangilash ──────────────────────────────────────────────────────────
 let isRefreshing = false;
@@ -13,10 +16,30 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+// ─── Render uyqusidan himoya (retry + timeout) ───────────────────────────────
+const fetchWithRetry = async (url, options, maxRetries = 3) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (err) {
+      console.warn(`⚠️ So'rov urinish ${attempt}/${maxRetries} muvaffaqiyatsiz:`, err.message);
+      if (attempt === maxRetries) throw err;
+      // Render uyg'onishi uchun kutish (har safar ko'proq)
+      const waitMs = attempt * 3000;
+      console.log(`⏳ ${waitMs / 1000}s kutilmoqda, server uyg'onmoqda...`);
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+  }
+};
+
 export const refreshTokens = async () => {
   const refresh = localStorage.getItem('refresh_token');
   if (!refresh) throw new Error('No refresh token');
-  const res = await fetch(`${BASE_URL}/auth/refresh/`, {
+  const res = await fetchWithRetry(`${BASE_URL}/auth/refresh/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refresh }),
@@ -39,7 +62,7 @@ export const request = async (endpoint, options = {}, retry = true) => {
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await fetchWithRetry(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
@@ -85,7 +108,7 @@ export const request = async (endpoint, options = {}, retry = true) => {
 // ─── Multipart (file upload) ─────────────────────────────────────────────────
 export const requestFormData = async (endpoint, formData, method = 'POST') => {
   const token = localStorage.getItem('access_token');
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await fetchWithRetry(`${BASE_URL}${endpoint}`, {
     method,
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: formData,
