@@ -18,15 +18,14 @@ class IsAdmin(permissions.BasePermission):
 
 
 class IsTeacher(permissions.BasePermission):
-    """Only allows access to teacher users."""
-    message = 'Faqat teacher foydalanuvchilar uchun.'
+    """Only allows access to teacher or admin users."""
+    message = 'Faqat teacher yoki admin foydalanuvchilar uchun.'
 
     def has_permission(self, request, view):
-        return (
-            request.user
-            and request.user.is_authenticated
-            and getattr(request.user, 'role', None) == 'teacher'
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        role = getattr(request.user, 'role', None)
+        return role in ('teacher', 'admin')
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):

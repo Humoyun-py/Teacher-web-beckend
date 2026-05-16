@@ -164,6 +164,8 @@ class LessonViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ('create', 'destroy'):
             return [IsAdmin()]
+        if self.action in ('start', 'end', 'today'):
+            return [IsTeacher()]
         return [IsAdminOrReadOnly()]
 
     def get_queryset(self):
