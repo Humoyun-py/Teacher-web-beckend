@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, PlayCircle, StopCircle, Clock, QrCode, CheckCircle, AlertCircle, Loader, User, BookOpen } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../api';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [todayLessons, setTodayLessons] = useState([]);
@@ -54,6 +55,14 @@ export default function TeacherDashboard() {
 
     loadDashboard();
   }, [navigate]);
+
+  useEffect(() => {
+    if (location.pathname === '/teacher/qr-scan' && !isCheckedIn) {
+      setShowScanner(true);
+      // Optional: scroll slightly to make scanner visible
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 300);
+    }
+  }, [location.pathname, isCheckedIn]);
 
   const handleScanCode = async (result) => {
     if (!result?.length || isScanningRef.current || isCheckedIn) return;

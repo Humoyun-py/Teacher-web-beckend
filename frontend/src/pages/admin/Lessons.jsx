@@ -154,12 +154,12 @@ export default function Lessons() {
                     <div className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
                       <Clock size={12} color="var(--text-muted)" />
                       <span className="text-muted">
-                        {lesson.start_time?.slice(0, 5)} – {lesson.end_time?.slice(0, 5)}
+                        {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
                       </span>
                     </div>
-                    {lesson.actual_start_time && (
+                    {lesson.actual_start && (
                       <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: '0.1rem' }}>
-                        Boshlandi: {new Date(lesson.actual_start_time).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                        Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     )}
                   </td>
