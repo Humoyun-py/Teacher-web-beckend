@@ -125,11 +125,11 @@ export default function TeacherSchedule() {
                     <div className="flex-center gap-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       <span className="flex-center gap-1">
                         <Clock size={13} />
-                        {lesson.start_time?.slice(0, 5)} – {lesson.end_time?.slice(0, 5)}
+                        {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
                       </span>
-                      {lesson.actual_start_time && (
+                      {lesson.actual_start && (
                         <span style={{ color: 'var(--accent)' }}>
-                          Boshlandi: {new Date(lesson.actual_start_time).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                          Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                     </div>
