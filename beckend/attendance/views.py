@@ -164,11 +164,28 @@ class QRCheckInView(APIView):
         existing = Attendance.objects.filter(
             teacher=teacher, date=today,
         ).first()
+
+        # Determine if check-in or check-out
         if existing and existing.check_in_time:
-            return Response(
-                {'error': 'Bugun allaqachon check-in qilingan.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # If already checked out
+            if existing.check_out_time:
+                return Response(
+                    {'error': 'Bugun kirish va chiqish allaqachon qayd etilgan.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # This is check-out scan
+            existing.check_out_time = now
+            existing.save()
+            return Response({
+                'message': 'Chiqish (Check-out) muvaffaqiyatli!',
+                'attendance': AttendanceSerializer(existing).data,
+            })
+
+        # This is check-in scan
+        # Cutoff time: 12:00 PM local time
+        cutoff_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        is_after_noon = now > cutoff_time
 
         # Calculate if late
         # EXPECTED_ARRIVAL_TIME is local time (8:00 AM)
@@ -190,7 +207,11 @@ class QRCheckInView(APIView):
             from decimal import Decimal
             penalty_amount = Decimal(late_minutes) * teacher.minute_rate
 
-        attendance_status = Attendance.Status.LATE if is_late else Attendance.Status.PRESENT
+        if is_after_noon:
+            # 12:00 dan keyin kelsa pul yozilmaydi (status = absent)
+            attendance_status = Attendance.Status.ABSENT
+        else:
+            attendance_status = Attendance.Status.LATE if is_late else Attendance.Status.PRESENT
 
         attendance, created = Attendance.objects.update_or_create(
             teacher=teacher,
@@ -206,7 +227,7 @@ class QRCheckInView(APIView):
         )
 
         return Response({
-            'message': 'Check-in muvaffaqiyatli!',
+            'message': 'Kirish (Check-in) muvaffaqiyatli!' if not is_after_noon else 'Kirish qayd etildi, lekin soat 12:00 dan keyin bo\'lgani uchun bugungi kunga haq yozilmaydi!',
             'is_late': is_late,
             'late_minutes': late_minutes,
             'penalty_amount': str(penalty_amount),

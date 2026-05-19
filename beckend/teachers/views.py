@@ -287,8 +287,11 @@ class TeacherViewSet(viewsets.ModelViewSet):
             date__year=year,
         )
 
+        from django.db.models import Q
         days_present = attendances.filter(
             status__in=[Attendance.Status.PRESENT, Attendance.Status.LATE]
+        ).filter(
+            Q(check_in_time__isnull=True) | Q(check_out_time__isnull=False)
         ).count()
 
         days_absent = attendances.filter(

@@ -11,7 +11,9 @@ export default function TeacherDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [todayLessons, setTodayLessons] = useState([]);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [isCheckedOut, setIsCheckedOut] = useState(false);
   const [checkinTime, setCheckinTime] = useState(null);
+  const [checkoutTime, setCheckoutTime] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -37,12 +39,14 @@ export default function TeacherDashboard() {
 
         if (todayAtt.status === 'fulfilled') {
           const att = todayAtt.value?.results || todayAtt.value;
-          if (Array.isArray(att) && att.length > 0) {
+          const record = Array.isArray(att) ? att[0] : att;
+          if (record && record.check_in_time) {
             setIsCheckedIn(true);
-            setCheckinTime(att[0].check_in_time);
-          } else if (att && att.check_in_time) {
-            setIsCheckedIn(true);
-            setCheckinTime(att.check_in_time);
+            setCheckinTime(record.check_in_time);
+            if (record.check_out_time) {
+              setIsCheckedOut(true);
+              setCheckoutTime(record.check_out_time);
+            }
           }
         }
 
@@ -65,7 +69,9 @@ export default function TeacherDashboard() {
   }, [location.pathname, isCheckedIn]);
 
   const handleScanCode = async (result) => {
-    if (!result?.length || isScanningRef.current || isCheckedIn) return;
+    if (!result?.length || isScanningRef.current) return;
+    if (isCheckedIn && isCheckedOut) return;
+    
     isScanningRef.current = true;
     setScanning(true);
     let scannedData = result[0].rawValue;
@@ -78,11 +84,22 @@ export default function TeacherDashboard() {
     
     try {
       const res = await api.checkIn(scannedData);
-      setIsCheckedIn(true);
-      setCheckinTime(new Date().toISOString());
-      setShowScanner(false);
-      const lateMsg = res.is_late ? `\n⚠️ ${res.late_minutes} daqiqa kechikdingiz.` : '';
-      await alert('✅ Check-in muvaffaqiyatli!' + lateMsg);
+      const att = res.attendance || res;
+      
+      if (att.check_out_time) {
+        setIsCheckedOut(true);
+        setCheckoutTime(att.check_out_time);
+        setShowScanner(false);
+        await alert('✅ Chiqish (Check-out) muvaffaqiyatli!\n\nXayr, salomat bo\'ling!');
+      } else {
+        setIsCheckedIn(true);
+        setCheckinTime(att.check_in_time);
+        setShowScanner(false);
+        const lateMsg = res.is_late ? `\n⚠️ ${res.late_minutes} daqiqa kechikdingiz.` : '';
+        const warnMsg = att.status === 'absent' ? '\n⚠️ Soat 12:00 dan kech qolganingiz sababli bugungi kunga haq yozilmaydi!' : '';
+        await alert('✅ Kirish (Check-in) muvaffaqiyatli!' + lateMsg + warnMsg);
+      }
+      isScanningRef.current = false;
     } catch (err) {
       const msg = err?.data?.error || err?.data?.message || err?.data?.detail || JSON.stringify(err?.data || {});
       if (err?.status === 400 && (msg.toLowerCase().includes('already') || msg.includes('mavjud'))) {
@@ -222,27 +239,65 @@ export default function TeacherDashboard() {
       {/* QR Check-in + Today Lessons */}
       <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>
 
-        {/* QR Check-in */}
+        {/* QR Check-in & Check-out */}
         <div className="glass flex-col" style={{ padding: '2rem', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
           <div style={{
             width: '90px', height: '90px',
-            background: isCheckedIn ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)',
+            background: isCheckedOut ? 'rgba(234,179,8,0.1)' : (isCheckedIn ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)'),
             borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <QrCode size={44} color={isCheckedIn ? 'var(--success)' : 'var(--primary)'} />
+            <QrCode size={44} color={isCheckedOut ? 'var(--warning)' : (isCheckedIn ? 'var(--success)' : 'var(--primary)')} />
           </div>
-          <h3 className="heading-3">{isCheckedIn ? 'Check-in qilindingiz ✅' : 'QR orqali Check-in'}</h3>
+          <h3 className="heading-3">
+            {isCheckedOut ? 'Chiqish qayd etildi 🕒' : (isCheckedIn ? 'Kirish qayd etilgan ✅' : 'QR orqali Kirish (Check-in)')}
+          </h3>
 
-          {isCheckedIn ? (
-            <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 'var(--radius-md)', width: '100%' }}>
-              <CheckCircle size={22} color="var(--success)" />
-              <p style={{ color: 'var(--success)', marginTop: '0.5rem', fontWeight: 500 }}>
-                Siz maktabga soat {checkinTime ? new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'} da keldingiz
+          {isCheckedOut ? (
+            <div style={{ padding: '1.25rem', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 'var(--radius-md)', width: '100%' }}>
+              <Clock size={22} color="var(--warning)" style={{ marginBottom: '0.5rem', alignSelf: 'center' }} />
+              <p style={{ color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                Kirish vaqti: <strong>{checkinTime ? new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
+              </p>
+              <p style={{ color: 'var(--warning)', marginTop: '0.4rem', fontWeight: 500, fontSize: '0.88rem' }}>
+                Chiqish vaqti: <strong>{new Date(checkoutTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</strong>
               </p>
             </div>
+          ) : isCheckedIn ? (
+            <div className="flex-col gap-3" style={{ width: '100%' }}>
+              <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 'var(--radius-md)', width: '100%' }}>
+                <CheckCircle size={22} color="var(--success)" style={{ alignSelf: 'center', marginBottom: '0.25rem' }} />
+                <p style={{ color: 'var(--success)', fontWeight: 500, fontSize: '0.88rem' }}>
+                  Siz maktabga soat {checkinTime ? new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'} da keldingiz.
+                </p>
+              </div>
+              
+              {!showScanner ? (
+                <button className="btn btn-warning" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowScanner(true)}>
+                  <Camera size={17} /> Chiqish (Check-out) qilish
+                </button>
+              ) : (
+                <div style={{ width: '100%', maxWidth: '280px', alignSelf: 'center' }}>
+                  <div style={{ border: '2px solid var(--warning)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                    <Scanner
+                      onScan={handleScanCode}
+                      onError={err => console.log(err)}
+                      components={{ audio: false, finder: false }}
+                    />
+                  </div>
+                  {scanning && (
+                    <div className="flex-center gap-2" style={{ marginTop: '0.75rem', color: 'var(--warning)' }}>
+                      <Loader size={14} className="spinner" /> Tekshirilmoqda...
+                    </div>
+                  )}
+                  <button className="btn btn-outline" style={{ width: '100%', marginTop: '0.75rem' }} onClick={() => setShowScanner(false)}>
+                    Bekor qilish
+                  </button>
+                </div>
+              )}
+            </div>
           ) : showScanner ? (
-            <div style={{ width: '100%', maxWidth: '280px' }}>
+            <div style={{ width: '100%', maxWidth: '280px', alignSelf: 'center' }}>
               <div style={{ border: '2px solid var(--primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                 <Scanner
                   onScan={handleScanCode}
