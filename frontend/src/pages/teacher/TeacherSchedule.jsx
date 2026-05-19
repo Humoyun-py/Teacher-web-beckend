@@ -119,14 +119,22 @@ export default function TeacherSchedule() {
                     <BookOpen size={24} color="var(--primary)" />
                   </div>
                   <div>
-                    <h3 style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.2rem' }}>
+                    <h3 style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {lesson.subject_name || lesson.subject || '—'} — {lesson.class_name || lesson.school_class || '—'}
+                      {lesson.is_replaced && lesson.replacement_status === 'approved' && (
+                        <span className="badge badge-warning" style={{ fontSize: '0.65rem', textTransform: 'none', padding: '0.15rem 0.4rem' }}>O'rinbosar dars</span>
+                      )}
                     </h3>
                     <div className="flex-center gap-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       <span className="flex-center gap-1">
                         <Clock size={13} />
                         {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
                       </span>
+                      {lesson.is_replaced && lesson.replacement_status === 'approved' && lesson.teacher_name && (
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          ({lesson.teacher_name} o'rniga)
+                        </span>
+                      )}
                       {lesson.actual_start && (
                         <span style={{ color: 'var(--accent)' }}>
                           Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}

@@ -294,12 +294,20 @@ export default function TeacherDashboard() {
                 }}>
                   <div className="flex-between">
                     <div>
-                      <p style={{ fontWeight: 600, fontSize: '0.92rem' }}>
+                      <p style={{ fontWeight: 600, fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         {lesson.subject_name || lesson.subject} — {lesson.class_name || lesson.school_class}
+                        {lesson.is_replaced && lesson.replacement_status === 'approved' && (
+                          <span className="badge badge-warning" style={{ fontSize: '0.62rem', textTransform: 'none', padding: '0.15rem 0.4rem' }}>O'rinbosar dars</span>
+                        )}
                       </p>
-                      <p className="text-muted" style={{ fontSize: '0.78rem', marginTop: '0.1rem' }}>
+                      <p className="text-muted" style={{ fontSize: '0.78rem', marginTop: '0.2rem' }}>
                         <Clock size={11} style={{ display: 'inline', marginRight: '3px' }} />
                         {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
+                        {lesson.is_replaced && lesson.replacement_status === 'approved' && lesson.teacher_name && (
+                          <span style={{ marginLeft: '8px', color: 'var(--text-muted)' }}>
+                            ({lesson.teacher_name} o'rniga)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <span className={`badge ${lesson.status === 'in_progress' ? 'badge-warning' : lesson.status === 'completed' ? 'badge-success' : lesson.status === 'missed' ? 'badge-danger' : 'badge-primary'}`} style={{ fontSize: '0.7rem' }}>
