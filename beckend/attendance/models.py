@@ -77,6 +77,10 @@ class Attendance(models.Model):
         default=0,
         verbose_name='Kechikish (daqiqa)',
     )
+    penalty_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='Jarima summasi',
+    )
     notes = models.TextField(blank=True, verbose_name='Izoh')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

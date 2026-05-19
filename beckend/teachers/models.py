@@ -93,8 +93,36 @@ class Teacher(models.Model):
         null=True, blank=True,
         verbose_name='Ishga kirgan sana',
     )
+    monthly_salary = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name='Oylik maosh',
+    )
+    daily_rate = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='Kunlik maosh',
+    )
+    hourly_rate = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='Soatlik maosh',
+    )
+    minute_rate = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='Daqiqalik maosh',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.monthly_salary:
+            from decimal import Decimal
+            self.daily_rate = Decimal(self.monthly_salary) / Decimal(24)
+            self.hourly_rate = self.daily_rate / Decimal(8)
+            self.minute_rate = self.hourly_rate / Decimal(60)
+        else:
+            self.daily_rate = 0
+            self.hourly_rate = 0
+            self.minute_rate = 0
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Teacher'

@@ -46,7 +46,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'id', 'teacher', 'teacher_name', 'teacher_employee_id',
             'date', 'check_in_time', 'check_out_time',
             'status', 'status_display', 'qr_code',
-            'is_late', 'late_minutes', 'notes',
+            'is_late', 'late_minutes', 'penalty_amount', 'notes',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['check_in_time', 'is_late', 'late_minutes']

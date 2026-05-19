@@ -183,8 +183,12 @@ class QRCheckInView(APIView):
             minutes=settings.LATE_THRESHOLD_MINUTES
         )
         late_minutes = 0
+        penalty_amount = 0
         if is_late:
             late_minutes = int((now - expected_time).total_seconds() / 60)
+            # Kechikkan daqiqalar uchun jarima hisoblash
+            from decimal import Decimal
+            penalty_amount = Decimal(late_minutes) * teacher.minute_rate
 
         attendance_status = Attendance.Status.LATE if is_late else Attendance.Status.PRESENT
 
@@ -197,6 +201,7 @@ class QRCheckInView(APIView):
                 'qr_code': qr,
                 'is_late': is_late,
                 'late_minutes': late_minutes,
+                'penalty_amount': penalty_amount,
             },
         )
 
@@ -204,6 +209,7 @@ class QRCheckInView(APIView):
             'message': 'Check-in muvaffaqiyatli!',
             'is_late': is_late,
             'late_minutes': late_minutes,
+            'penalty_amount': str(penalty_amount),
             'attendance': AttendanceSerializer(attendance).data,
         })
 

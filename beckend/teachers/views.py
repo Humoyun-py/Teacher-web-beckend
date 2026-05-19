@@ -255,3 +255,90 @@ class TeacherViewSet(viewsets.ModelViewSet):
             'status': teacher.status,
             'is_active': teacher.user.is_active,
         })
+
+    @swagger_auto_schema(
+        method='get',
+        operation_description="Teacher oylik maosh hisoboti",
+        manual_parameters=[
+            openapi.Parameter('month', openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description='Oy (1-12)'),
+            openapi.Parameter('year', openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description='Yil'),
+        ],
+        tags=['Teacher boshqaruvi'],
+    )
+    @action(detail=True, methods=['get'])
+    def salary_report(self, request, pk=None):
+        """Teacher uchun oylik maosh hisoboti."""
+        from attendance.models import Attendance
+        from django.utils import timezone
+        from django.db.models import Sum
+        from decimal import Decimal
+
+        teacher = self.get_object()
+        now = timezone.localtime()
+
+        month = int(request.query_params.get('month', now.month))
+        year = int(request.query_params.get('year', now.year))
+
+        # Shu oydagi barcha davomatlar
+        attendances = Attendance.objects.filter(
+            teacher=teacher,
+            date__month=month,
+            date__year=year,
+        )
+
+        days_present = attendances.filter(
+            status__in=[Attendance.Status.PRESENT, Attendance.Status.LATE]
+        ).count()
+
+        days_absent = attendances.filter(
+            status=Attendance.Status.ABSENT
+        ).count()
+
+        days_late = attendances.filter(
+            status=Attendance.Status.LATE
+        ).count()
+
+        total_late_minutes = attendances.aggregate(
+            total=Sum('late_minutes')
+        )['total'] or 0
+
+        total_penalty = attendances.aggregate(
+            total=Sum('penalty_amount')
+        )['total'] or Decimal('0')
+
+        # Hisoblash
+        total_earned = Decimal(days_present) * teacher.daily_rate
+        final_salary = total_earned - total_penalty
+
+        # Kunlik davomatlar tafsiloti
+        daily_details = []
+        for att in attendances.order_by('date'):
+            daily_details.append({
+                'date': str(att.date),
+                'status': att.get_status_display(),
+                'check_in_time': str(att.check_in_time) if att.check_in_time else None,
+                'is_late': att.is_late,
+                'late_minutes': att.late_minutes,
+                'penalty_amount': str(att.penalty_amount),
+                'earned': str(teacher.daily_rate) if att.status in [Attendance.Status.PRESENT, Attendance.Status.LATE] else '0',
+            })
+
+        return Response({
+            'teacher_id': teacher.id,
+            'full_name': teacher.user.get_full_name(),
+            'employee_id': teacher.employee_id,
+            'month': month,
+            'year': year,
+            'monthly_salary': str(teacher.monthly_salary),
+            'daily_rate': str(teacher.daily_rate),
+            'hourly_rate': str(teacher.hourly_rate),
+            'minute_rate': str(teacher.minute_rate),
+            'days_present': days_present,
+            'days_absent': days_absent,
+            'days_late': days_late,
+            'total_late_minutes': total_late_minutes,
+            'total_earned': str(total_earned),
+            'total_penalty': str(total_penalty),
+            'final_salary': str(final_salary),
+            'daily_details': daily_details,
+        })

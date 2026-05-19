@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Loader, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Loader, X, DollarSign, Calendar } from 'lucide-react';
 import { api } from '../../api';
 
 export default function TeachersList() {
@@ -9,7 +9,15 @@ export default function TeachersList() {
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '' });
+  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
+
+  // Salary report state
+  const [showSalaryModal, setShowSalaryModal] = useState(false);
+  const [salaryReport, setSalaryReport] = useState(null);
+  const [salaryLoading, setSalaryLoading] = useState(false);
+  const [salaryMonth, setSalaryMonth] = useState(new Date().getMonth() + 1);
+  const [salaryYear, setSalaryYear] = useState(new Date().getFullYear());
+  const [salaryTeacherId, setSalaryTeacherId] = useState(null);
 
   const loadTeachers = async () => {
     setLoading(true);
@@ -33,15 +41,16 @@ export default function TeachersList() {
       first_name: teacher.first_name || '',
       last_name: teacher.last_name || '',
       username: teacher.username || '',
-      password: '', // Parolni bo'sh qoldiramiz tahrirlashda
-      phone: teacher.phone || ''
+      password: '',
+      phone: teacher.phone || '',
+      monthly_salary: teacher.monthly_salary || '',
     });
     setShowModal(true);
   };
 
   const handleOpenCreateModal = () => {
     setEditingTeacher(null);
-    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '' });
+    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
     setShowModal(true);
   };
 
@@ -50,19 +59,16 @@ export default function TeachersList() {
     setIsSubmitting(true);
     try {
       if (editingTeacher) {
-        // Tahrirlash
         const updateData = { ...newTeacher };
-        if (!updateData.password) delete updateData.password; // Agar parol kiritilmagan bo'lsa uni yubormaymiz
-        
+        if (!updateData.password) delete updateData.password;
+        if (updateData.monthly_salary === '') delete updateData.monthly_salary;
         await api.patchTeacher(editingTeacher.id, updateData);
       } else {
-        // Yangi yaratish
         const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
         await api.createTeacher({ ...newTeacher, employee_id });
       }
-      
       setShowModal(false);
-      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '' });
+      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
       setEditingTeacher(null);
       await loadTeachers();
     } catch (err) {
@@ -84,6 +90,37 @@ export default function TeachersList() {
     } catch (err) {
       alert("O'chirishda xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
     }
+  };
+
+  const handleOpenSalaryReport = async (teacherId) => {
+    setSalaryTeacherId(teacherId);
+    setShowSalaryModal(true);
+    await fetchSalaryReport(teacherId, salaryMonth, salaryYear);
+  };
+
+  const fetchSalaryReport = async (teacherId, month, year) => {
+    setSalaryLoading(true);
+    setSalaryReport(null);
+    try {
+      const res = await api.getTeacherSalaryReport(teacherId, month, year);
+      setSalaryReport(res);
+    } catch (err) {
+      console.error('Maosh hisobotini yuklashda xato:', err);
+      alert('Maosh hisobotini yuklashda xatolik!');
+    } finally {
+      setSalaryLoading(false);
+    }
+  };
+
+  const handleMonthChange = (month, year) => {
+    setSalaryMonth(month);
+    setSalaryYear(year);
+    if (salaryTeacherId) fetchSalaryReport(salaryTeacherId, month, year);
+  };
+
+  const formatMoney = (val) => {
+    const num = parseFloat(val) || 0;
+    return num.toLocaleString('uz-UZ', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " so'm";
   };
 
   return (
@@ -119,6 +156,7 @@ export default function TeachersList() {
                   <th>O'qituvchi logini (I.O.F)</th>
                   <th>Username (Login)</th>
                   <th>Telefon raqami</th>
+                  <th>Oylik maosh</th>
                   <th>Status</th>
                   <th>Amallar</th>
                 </tr>
@@ -126,7 +164,7 @@ export default function TeachersList() {
               <tbody>
                 {teachers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                       Hech qanday o'qituvchi topilmadi
                     </td>
                   </tr>
@@ -146,18 +184,21 @@ export default function TeachersList() {
                     <td style={{ color: 'var(--text-muted)' }}>@{teacher.username}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{teacher.phone || '-'}</td>
                     <td>
+                      <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                        {teacher.monthly_salary ? formatMoney(teacher.monthly_salary) : '-'}
+                      </span>
+                    </td>
+                    <td>
                       <span className={`badge ${teacher.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
                         {teacher.status || 'active'}
                       </span>
                     </td>
                     <td>
                       <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
-                        <button 
-                          onClick={() => handleEditClick(teacher)}
-                          className="btn-outline flex-center" 
-                          style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--accent)', borderColor: 'var(--surface-border)' }} 
-                          title="Tahrirlash"
-                        >
+                        <button onClick={() => handleOpenSalaryReport(teacher.id)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--success)', borderColor: 'var(--surface-border)' }} title="Maosh hisoboti">
+                          <DollarSign size={16} />
+                        </button>
+                        <button onClick={() => handleEditClick(teacher)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--accent)', borderColor: 'var(--surface-border)' }} title="Tahrirlash">
                           <Edit size={16} />
                         </button>
                         <button onClick={() => handleDeleteTeacher(teacher.id)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--surface-border)' }} title="O'chirish">
@@ -173,6 +214,7 @@ export default function TeachersList() {
         )}
       </div>
 
+      {/* CREATE / EDIT Modal */}
       {showModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="glass" style={{ width: '100%', maxWidth: '400px', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
@@ -217,11 +259,165 @@ export default function TeachersList() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Telefon Raqam</label>
                 <input required type="text" className="input-field" value={newTeacher.phone} onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value })} placeholder="+998 90 123 45 67" />
               </div>
+              <div className="input-group">
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>💰 Oylik maosh (so'm)</label>
+                <input type="number" className="input-field" value={newTeacher.monthly_salary} onChange={e => setNewTeacher({ ...newTeacher, monthly_salary: e.target.value })} placeholder="Masalan: 3000000" min="0" step="1000" />
+                {newTeacher.monthly_salary > 0 && (
+                  <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>📊 Avtomatik hisob:</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem', marginTop: '0.25rem' }}>
+                      <span>Kunlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24)}</span>
+                      <span>Soatlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8)}</span>
+                      <span>Minutlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8 / 60)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }} disabled={isSubmitting}>
                 {isSubmitting ? (editingTeacher ? "Yangilanmoqda..." : "Yaratilmoqda...") : (editingTeacher ? "Saqlash va Yangilash" : "Saqlash va Yaratish")}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SALARY REPORT Modal */}
+      {showSalaryModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass" style={{ width: '100%', maxWidth: '700px', maxHeight: '85vh', overflow: 'auto', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
+            <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+              <h2 className="heading-3">💰 Maosh Hisoboti</h2>
+              <button onClick={() => { setShowSalaryModal(false); setSalaryReport(null); }} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Month/Year selector */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', alignItems: 'center' }}>
+              <Calendar size={18} color="var(--primary)" />
+              <select className="input-field" value={salaryMonth} onChange={e => handleMonthChange(parseInt(e.target.value), salaryYear)} style={{ width: 'auto' }}>
+                {['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'].map((m, i) => (
+                  <option key={i + 1} value={i + 1}>{m}</option>
+                ))}
+              </select>
+              <select className="input-field" value={salaryYear} onChange={e => handleMonthChange(salaryMonth, parseInt(e.target.value))} style={{ width: 'auto' }}>
+                {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+
+            {salaryLoading ? (
+              <div className="flex-center" style={{ padding: '3rem', flexDirection: 'column', gap: '1rem' }}>
+                <Loader className="spinner" size={32} color="var(--primary)" />
+                <p className="text-muted">Hisobot yuklanmoqda...</p>
+              </div>
+            ) : salaryReport ? (
+              <div className="flex-col gap-4">
+                {/* Teacher info */}
+                <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '12px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{salaryReport.full_name}</h3>
+                  <span className="text-muted">{salaryReport.employee_id}</span>
+                </div>
+
+                {/* Summary cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+                  <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Oylik maosh</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>{formatMoney(salaryReport.monthly_salary)}</div>
+                  </div>
+                  <div style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kelgan kunlar</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--success)' }}>{salaryReport.days_present} kun</div>
+                  </div>
+                  <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kelmagan</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--danger)' }}>{salaryReport.days_absent} kun</div>
+                  </div>
+                  <div style={{ padding: '1rem', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Kechikkan</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#eab308' }}>{salaryReport.days_late} kun ({salaryReport.total_late_minutes} min)</div>
+                  </div>
+                </div>
+
+                {/* Financial summary */}
+                <div style={{ padding: '1.25rem', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.15)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span>Ishlagan kunlar uchun:</span>
+                    <span style={{ fontWeight: 600, color: 'var(--success)' }}>+{formatMoney(salaryReport.total_earned)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span>Jarima (kechikish):</span>
+                    <span style={{ fontWeight: 600, color: 'var(--danger)' }}>-{formatMoney(salaryReport.total_penalty)}</span>
+                  </div>
+                  <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.75rem 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>Jami to'lanadigan:</span>
+                    <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>{formatMoney(salaryReport.final_salary)}</span>
+                  </div>
+                </div>
+
+                {/* Rate info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.8rem' }}>
+                  <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textAlign: 'center' }}>
+                    <div className="text-muted">Kunlik</div>
+                    <div style={{ fontWeight: 600 }}>{formatMoney(salaryReport.daily_rate)}</div>
+                  </div>
+                  <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textAlign: 'center' }}>
+                    <div className="text-muted">Soatlik</div>
+                    <div style={{ fontWeight: 600 }}>{formatMoney(salaryReport.hourly_rate)}</div>
+                  </div>
+                  <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textAlign: 'center' }}>
+                    <div className="text-muted">Minutlik</div>
+                    <div style={{ fontWeight: 600 }}>{formatMoney(salaryReport.minute_rate)}</div>
+                  </div>
+                </div>
+
+                {/* Daily breakdown */}
+                {salaryReport.daily_details && salaryReport.daily_details.length > 0 && (
+                  <div>
+                    <h4 style={{ marginBottom: '0.75rem', fontWeight: 600 }}>📋 Kunlik tafsilot</h4>
+                    <div className="table-container">
+                      <table className="table" style={{ fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr>
+                            <th>Sana</th>
+                            <th>Holat</th>
+                            <th>Kelish vaqti</th>
+                            <th>Kechikish</th>
+                            <th>Jarima</th>
+                            <th>Kunlik</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {salaryReport.daily_details.map((d, i) => (
+                            <tr key={i}>
+                              <td>{d.date}</td>
+                              <td>
+                                <span className={`badge ${d.status === 'Kelgan' ? 'badge-success' : d.status === 'Kechikkan' ? 'badge-warning' : 'badge-danger'}`}>
+                                  {d.status}
+                                </span>
+                              </td>
+                              <td>{d.check_in_time ? new Date(d.check_in_time).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                              <td style={{ color: d.late_minutes > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                {d.late_minutes > 0 ? `${d.late_minutes} min` : '-'}
+                              </td>
+                              <td style={{ color: parseFloat(d.penalty_amount) > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                {parseFloat(d.penalty_amount) > 0 ? `-${formatMoney(d.penalty_amount)}` : '-'}
+                              </td>
+                              <td style={{ color: parseFloat(d.earned) > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                                {parseFloat(d.earned) > 0 ? formatMoney(d.earned) : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Ma'lumot topilmadi</p>
+            )}
           </div>
         </div>
       )}

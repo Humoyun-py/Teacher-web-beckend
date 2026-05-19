@@ -169,6 +169,8 @@ export const api = {
       body: JSON.stringify({ class_ids }),
     }),
   getTeacherStatusInfo: (id) => request(`/teachers/${id}/status_info/`),
+  getTeacherSalaryReport: (id, month, year) =>
+    request(`/teachers/${id}/salary_report/?month=${month}&year=${year}`),
 
   // ── Subjects ──
   getSubjects: () => request('/teachers/subjects/'),
