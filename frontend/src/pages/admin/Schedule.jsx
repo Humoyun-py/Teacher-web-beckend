@@ -42,9 +42,9 @@ export default function Schedule() {
           setSchedules(flat.length ? flat : []);
         } else setSchedules([]);
       }
-      if (tch.status === 'fulfilled') setTeachers(tch.value.results || []);
-      if (sub.status === 'fulfilled') setSubjects(sub.value.results || []);
-      if (cls.status === 'fulfilled') setClasses(cls.value.results || []);
+      if (tch.status === 'fulfilled') setTeachers(tch.value.results || tch.value || []);
+      if (sub.status === 'fulfilled') setSubjects(sub.value.results || sub.value || []);
+      if (cls.status === 'fulfilled') setClasses(cls.value.results || cls.value || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -65,7 +65,7 @@ export default function Schedule() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bu jadvalni o'chirmoqchimisiz?")) return;
+    if (!await window.confirm("Bu jadvalni o'chirmoqchimisiz?")) return;
     try {
       await api.deleteSchedule(id);
       setSchedules(schedules.filter(s => s.id !== id));
@@ -78,7 +78,7 @@ export default function Schedule() {
     setGenerating(true);
     try {
       const res = await api.generateLessonsFromSchedule(genDate);
-      alert(`✅ ${res.created || 0} ta dars yaratildi!`);
+      alert(`✅ ${res.created_count || 0} ta dars yaratildi!`);
       setShowGenModal(false);
     } catch (err) {
       alert('Xatolik: ' + JSON.stringify(err.data || err.message));

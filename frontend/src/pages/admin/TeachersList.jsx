@@ -83,7 +83,7 @@ export default function TeachersList() {
   };
 
   const handleDeleteTeacher = async (id) => {
-    if (!window.confirm("Rostdan ham ushbu o'qituvchini o'chirmoqchimisiz?")) return;
+    if (!await window.confirm("Rostdan ham ushbu o'qituvchini o'chirmoqchimisiz?")) return;
     try {
       await api.deleteTeacher(id);
       await loadTeachers();

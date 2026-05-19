@@ -50,7 +50,7 @@ export default function Replacements() {
   };
 
   const handleCancel = async (lessonId) => {
-    if (!window.confirm("O'rinbosarni bekor qilmoqchimisiz?")) return;
+    if (!await window.confirm("O'rinbosarni bekor qilmoqchimisiz?")) return;
     try {
       await api.cancelReplace(lessonId);
       await loadData();
@@ -60,7 +60,7 @@ export default function Replacements() {
   };
 
   const handleApproveReject = async (lessonId, action) => {
-    if (!window.confirm(`So'rovni ${action === 'approve' ? 'tasdiqlaysizmi' : 'rad etasizmi'}?`)) return;
+    if (!await window.confirm(`So'rovni ${action === 'approve' ? 'tasdiqlaysizmi' : 'rad etasizmi'}?`)) return;
     try {
       await api.approveReplace(lessonId, action);
       await loadData();

@@ -61,7 +61,7 @@ export default function Lessons() {
 
   const handleMarkAbsent = async () => {
     const date = dateFilter || new Date().toISOString().split('T')[0];
-    if (!window.confirm(`${date} sanasi uchun kelmaganlarni belgilashni tasdiqlaysizmi?`)) return;
+    if (!await window.confirm(`${date} sanasi uchun kelmaganlarni belgilashni tasdiqlaysizmi?`)) return;
     try {
       const res = await api.markAbsent(date);
       alert('✅ Kelmaganlar belgilandi: ' + JSON.stringify(res));

@@ -62,7 +62,7 @@ export default function Classes() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Rostdan ham bu sinfni o'chirmoqchimisiz?")) return;
+    if (!await window.confirm("Rostdan ham bu sinfni o'chirmoqchimisiz?")) return;
     try {
       await api.deleteClass(id);
       fetchClasses();

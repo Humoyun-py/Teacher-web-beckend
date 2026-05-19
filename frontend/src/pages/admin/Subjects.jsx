@@ -56,7 +56,7 @@ export default function Subjects() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Rostdan ham bu fanni o'chirmoqchimisiz?")) return;
+    if (!await window.confirm("Rostdan ham bu fanni o'chirmoqchimisiz?")) return;
     try {
       await api.deleteSubject(id);
       fetchSubjects();
