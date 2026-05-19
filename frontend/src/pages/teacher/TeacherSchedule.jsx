@@ -41,7 +41,7 @@ export default function TeacherSchedule() {
       loadLessons();
     } catch (err) {
       const msg = err.data?.error || err.data?.lesson_id?.[0] || JSON.stringify(err.data || err.message);
-      alert('Xatolik: ' + msg);
+      await alert('Xatolik: ' + msg);
     } finally { setActionLoading(null); }
   };
 
@@ -53,7 +53,7 @@ export default function TeacherSchedule() {
       await api.endLesson(id, notes);
       loadLessons();
     } catch (err) {
-      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+      await alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally { setActionLoading(null); }
   };
 
@@ -63,9 +63,9 @@ export default function TeacherSchedule() {
     setUploadingLesson(lessonId);
     try {
       await api.uploadPhoto(lessonId, file, 'Dars jarayonida olingan rasm');
-      alert('✅ Rasm muvaffaqiyatli yuborildi!');
+      await alert('✅ Rasm muvaffaqiyatli yuborildi!');
     } catch (err) {
-      alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
+      await alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
     } finally {
       setUploadingLesson(null);
       e.target.value = '';

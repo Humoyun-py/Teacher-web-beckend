@@ -41,16 +41,16 @@ export default function MyReplacements() {
 
   const handleRequest = async (e) => {
     e.preventDefault();
-    if (!form.lesson_id) return alert("Darsni tanlang!");
+    if (!form.lesson_id) return await alert("Darsni tanlang!");
     setIsSubmitting(true);
     try {
       await api.replaceLesson(parseInt(form.lesson_id), form.replacement_teacher_id ? parseInt(form.replacement_teacher_id) : null, form.reason);
       setShowModal(false);
       setForm({ lesson_id: '', replacement_teacher_id: '', reason: '' });
       await loadData();
-      alert("So'rov muvaffaqiyatli yuborildi!");
+      await alert("So'rov muvaffaqiyatli yuborildi!");
     } catch (err) {
-      alert("Xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
+      await alert("Xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
     } finally {
       setIsSubmitting(false);
     }

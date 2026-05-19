@@ -82,15 +82,15 @@ export default function TeacherDashboard() {
       setCheckinTime(new Date().toISOString());
       setShowScanner(false);
       const lateMsg = res.is_late ? `\n⚠️ ${res.late_minutes} daqiqa kechikdingiz.` : '';
-      alert('✅ Check-in muvaffaqiyatli!' + lateMsg);
+      await alert('✅ Check-in muvaffaqiyatli!' + lateMsg);
     } catch (err) {
       const msg = err?.data?.error || err?.data?.message || err?.data?.detail || JSON.stringify(err?.data || {});
       if (err?.status === 400 && (msg.toLowerCase().includes('already') || msg.includes('mavjud'))) {
         setIsCheckedIn(true);
         setShowScanner(false);
-        alert('ℹ️ Siz bugun allaqachon Check-in qilgansiz!');
+        await alert('ℹ️ Siz bugun allaqachon Check-in qilgansiz!');
       } else {
-        alert(`Xato: ${msg}\n\nQR kod: ${scannedData.slice(0, 30)}...`);
+        await alert(`Xato: ${msg}\n\nQR kod: ${scannedData.slice(0, 30)}...`);
         setTimeout(() => { isScanningRef.current = false; }, 2500);
       }
     } finally { setScanning(false); }
@@ -102,7 +102,7 @@ export default function TeacherDashboard() {
       await api.startLesson(id);
       setTodayLessons(prev => prev.map(l => l.id === id ? { ...l, status: 'in_progress', actual_start_time: new Date().toISOString() } : l));
     } catch (err) {
-      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+      await alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally { setActionLoading(null); }
   };
 
@@ -114,7 +114,7 @@ export default function TeacherDashboard() {
       await api.endLesson(id, notes);
       setTodayLessons(prev => prev.map(l => l.id === id ? { ...l, status: 'completed' } : l));
     } catch (err) {
-      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+      await alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally { setActionLoading(null); }
   };
 
@@ -124,9 +124,9 @@ export default function TeacherDashboard() {
     setUploadingLesson(lessonId);
     try {
       await api.uploadPhoto(lessonId, file, 'Dars jarayonida olingan rasm');
-      alert('✅ Rasm muvaffaqiyatli yuborildi!');
+      await alert('✅ Rasm muvaffaqiyatli yuborildi!');
     } catch (err) {
-      alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
+      await alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
     } finally {
       setUploadingLesson(null);
       e.target.value = '';
