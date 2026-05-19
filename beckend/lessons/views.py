@@ -177,7 +177,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             from django.db.models import Q
             teacher = user.teacher_profile
             queryset = queryset.filter(
-                Q(teacher=teacher) | Q(replacement_teacher=teacher)
+                Q(teacher=teacher) | Q(replacement_teacher=teacher, replacement_status=Lesson.ReplacementStatus.APPROVED)
             )
 
         return queryset
