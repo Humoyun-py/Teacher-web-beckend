@@ -269,8 +269,9 @@ class TeacherViewSet(viewsets.ModelViewSet):
     def salary_report(self, request, pk=None):
         """Teacher uchun oylik maosh hisoboti."""
         from attendance.models import Attendance
+        from lessons.models import Lesson
         from django.utils import timezone
-        from django.db.models import Sum
+        from django.db.models import Sum, Q
         from decimal import Decimal
 
         teacher = self.get_object()
@@ -279,7 +280,7 @@ class TeacherViewSet(viewsets.ModelViewSet):
         month = int(request.query_params.get('month', now.month))
         year = int(request.query_params.get('year', now.year))
 
-        # Shu oydagi barcha davomatlar
+        # ── Davomat ──
         attendances = Attendance.objects.filter(
             teacher=teacher,
             date__month=month,
@@ -306,9 +307,59 @@ class TeacherViewSet(viewsets.ModelViewSet):
             total=Sum('penalty_amount')
         )['total'] or Decimal('0')
 
-        # Hisoblash
+        # ── Darslar hisobi (Replace bilan) ──
+        # O'z darslari - replace bo'lmaganlar (bu teacher uchun hisob)
+        own_lessons = Lesson.objects.filter(
+            teacher=teacher,
+            date__month=month,
+            date__year=year,
+            is_replaced=False,
+            status__in=[Lesson.Status.COMPLETED, Lesson.Status.IN_PROGRESS],
+        ).count()
+
+        # O'z darslari - replace bo'lganlar (bular hisobdan chiqadi)
+        replaced_out_lessons = Lesson.objects.filter(
+            teacher=teacher,
+            date__month=month,
+            date__year=year,
+            is_replaced=True,
+        )
+        replaced_out_count = replaced_out_lessons.count()
+        replaced_out_details = []
+        for les in replaced_out_lessons.select_related('replacement_teacher__user', 'subject'):
+            replaced_out_details.append({
+                'date': str(les.date),
+                'subject': les.subject.name if les.subject else '',
+                'replacement_teacher': les.replacement_teacher.user.get_full_name() if les.replacement_teacher else '',
+                'reason': les.replacement_reason,
+            })
+
+        # Boshqalar o'rniga o'tilgan darslar (bu teacherga qo'shiladi)
+        replaced_in_lessons = Lesson.objects.filter(
+            replacement_teacher=teacher,
+            date__month=month,
+            date__year=year,
+            is_replaced=True,
+            status__in=[Lesson.Status.COMPLETED, Lesson.Status.IN_PROGRESS, Lesson.Status.SCHEDULED],
+        )
+        replaced_in_count = replaced_in_lessons.count()
+        replaced_in_details = []
+        for les in replaced_in_lessons.select_related('teacher__user', 'subject'):
+            replaced_in_details.append({
+                'date': str(les.date),
+                'subject': les.subject.name if les.subject else '',
+                'original_teacher': les.teacher.user.get_full_name(),
+                'reason': les.replacement_reason,
+            })
+
+        # ── Hisoblash ──
         total_earned = Decimal(days_present) * teacher.daily_rate
-        final_salary = total_earned - total_penalty
+        # Replace in darslar uchun kunlik rate qo'shish
+        replacement_earned = Decimal(replaced_in_count) * teacher.daily_rate
+        # Replace out darslar uchun kunlik rate ayirish
+        replaced_out_deduction = Decimal(replaced_out_count) * teacher.daily_rate
+
+        final_salary = total_earned + replacement_earned - replaced_out_deduction - total_penalty
 
         # Kunlik davomatlar tafsiloti
         daily_details = []
@@ -337,7 +388,14 @@ class TeacherViewSet(viewsets.ModelViewSet):
             'days_absent': days_absent,
             'days_late': days_late,
             'total_late_minutes': total_late_minutes,
+            'own_lessons': own_lessons,
+            'replaced_out_count': replaced_out_count,
+            'replaced_out_details': replaced_out_details,
+            'replaced_in_count': replaced_in_count,
+            'replaced_in_details': replaced_in_details,
             'total_earned': str(total_earned),
+            'replacement_earned': str(replacement_earned),
+            'replaced_out_deduction': str(replaced_out_deduction),
             'total_penalty': str(total_penalty),
             'final_salary': str(final_salary),
             'daily_details': daily_details,

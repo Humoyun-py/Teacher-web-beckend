@@ -89,6 +89,7 @@ class LessonSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(
         source='get_status_display', read_only=True,
     )
+    replacement_teacher_name = serializers.SerializerMethodField()
     duration_minutes = serializers.SerializerMethodField()
 
     class Meta:
@@ -98,10 +99,17 @@ class LessonSerializer(serializers.ModelSerializer):
             'subject', 'subject_name', 'school_class', 'class_name',
             'date', 'scheduled_start', 'scheduled_end',
             'actual_start', 'actual_end', 'status', 'status_display',
+            'is_replaced', 'replacement_teacher', 'replacement_teacher_name',
+            'replacement_reason',
             'notes', 'room', 'started_late', 'duration_minutes',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['actual_start', 'actual_end', 'started_late']
+
+    def get_replacement_teacher_name(self, obj):
+        if obj.replacement_teacher:
+            return obj.replacement_teacher.user.get_full_name()
+        return None
 
     def get_duration_minutes(self, obj):
         if obj.actual_start and obj.actual_end:
@@ -163,4 +171,27 @@ class EndLessonSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 'Faqat jarayondagi darsni tugatish mumkin.'
             )
+        return value
+
+
+class ReplaceLessonSerializer(serializers.Serializer):
+    """Serializer for replacing a teacher in a lesson."""
+
+    lesson_id = serializers.IntegerField()
+    replacement_teacher_id = serializers.IntegerField()
+    reason = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def validate_lesson_id(self, value):
+        try:
+            Lesson.objects.get(id=value)
+        except Lesson.DoesNotExist:
+            raise serializers.ValidationError('Dars topilmadi.')
+        return value
+
+    def validate_replacement_teacher_id(self, value):
+        from teachers.models import Teacher
+        try:
+            Teacher.objects.get(id=value)
+        except Teacher.DoesNotExist:
+            raise serializers.ValidationError('Teacher topilmadi.')
         return value

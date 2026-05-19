@@ -232,6 +232,13 @@ export const api = {
   generateLessonsFromSchedule: (date) =>
     request('/lessons/generate_from_schedule/', { method: 'POST', body: JSON.stringify({ date }) }),
 
+  // ── Replacements ──
+  replaceLesson: (lesson_id, replacement_teacher_id, reason = '') =>
+    request('/lessons/replace/', { method: 'POST', body: JSON.stringify({ lesson_id, replacement_teacher_id, reason }) }),
+  cancelReplace: (lesson_id) =>
+    request('/lessons/cancel-replace/', { method: 'POST', body: JSON.stringify({ lesson_id }) }),
+  getReplacements: () => request('/lessons/replacements/'),
+
   // ══════════════════════════════════════════
   // 📍 ATTENDANCE
   // ══════════════════════════════════════════

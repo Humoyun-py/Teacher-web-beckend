@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, QrCode, Camera,
-  Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library
+  Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library,
+  DollarSign, ArrowRightLeft
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -63,6 +64,8 @@ export default function DashboardLayout({ role }) {
     { name: 'Dars Jadvali',    path: '/admin/schedule',     icon: <Calendar size={20} /> },
     { name: 'QR Nazorat',      path: '/admin/qr-checkin',   icon: <QrCode size={20} /> },
     { name: 'Rasm Tekshiruv',  path: '/admin/video-review', icon: <Camera size={20} /> },
+    { name: 'Oylik Hisoblash',  path: '/admin/salary-calc',  icon: <DollarSign size={20} /> },
+    { name: "O'rinbosarlar",   path: '/admin/replacements', icon: <ArrowRightLeft size={20} /> },
     {
       name: 'Bildirishnomalar', path: '/admin/notifications', icon: <Bell size={20} />,
       badge: unreadCount > 0 ? unreadCount : null,
@@ -75,6 +78,7 @@ export default function DashboardLayout({ role }) {
     { name: 'Mening Darslarim',path: '/teacher/schedule',   icon: <Calendar size={20} /> },
     { name: 'QR Skaner',       path: '/teacher/qr-scan',    icon: <QrCode size={20} /> },
     { name: 'Statistika',      path: '/teacher/stats',      icon: <BarChart3 size={20} /> },
+    { name: "O'rinbosarlar",   path: '/teacher/replacements', icon: <ArrowRightLeft size={20} /> },
     {
       name: 'Bildirishnomalar', path: '/teacher/notifications', icon: <Bell size={20} />,
       badge: unreadCount > 0 ? unreadCount : null,

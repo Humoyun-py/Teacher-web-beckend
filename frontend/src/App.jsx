@@ -16,11 +16,14 @@ import Settings         from './pages/admin/Settings';
 
 import Subjects         from './pages/admin/Subjects';
 import Classes          from './pages/admin/Classes';
+import SalaryCalc       from './pages/admin/SalaryCalc';
+import Replacements     from './pages/admin/Replacements';
 
 // Teacher pages
 import TeacherDashboard  from './pages/teacher/TeacherDashboard';
 import TeacherSchedule   from './pages/teacher/TeacherSchedule';
 import TeacherStats      from './pages/teacher/TeacherStats';
+import MyReplacements    from './pages/teacher/MyReplacements';
 import Notifications2    from './pages/admin/Notifications'; // teacher ham shu componentni ishlatadi
 
 function App() {
@@ -39,6 +42,8 @@ function App() {
           <Route path="schedule"      element={<Schedule />} />
           <Route path="qr-checkin"    element={<QRCheckinData />} />
           <Route path="video-review"  element={<VideoReviewList />} />
+          <Route path="salary-calc"   element={<SalaryCalc />} />
+          <Route path="replacements"  element={<Replacements />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="settings"      element={<Settings />} />
         </Route>
@@ -49,6 +54,7 @@ function App() {
           <Route path="schedule"      element={<TeacherSchedule />} />
           <Route path="qr-scan"       element={<TeacherDashboard />} />
           <Route path="stats"         element={<TeacherStats />} />
+          <Route path="replacements"  element={<MyReplacements />} />
           <Route path="notifications" element={<Notifications2 />} />
         </Route>
 

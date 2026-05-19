@@ -20,6 +20,7 @@ from .serializers import (
     LessonScheduleSerializer, LessonScheduleCreateSerializer,
     LessonSerializer, LessonCreateSerializer,
     StartLessonSerializer, EndLessonSerializer,
+    ReplaceLessonSerializer,
 )
 from accounts.permissions import IsAdmin, IsAdminOrReadOnly, IsTeacher
 
@@ -173,7 +174,11 @@ class LessonViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
-            queryset = queryset.filter(teacher=user.teacher_profile)
+            from django.db.models import Q
+            teacher = user.teacher_profile
+            queryset = queryset.filter(
+                Q(teacher=teacher) | Q(replacement_teacher=teacher)
+            )
 
         return queryset
 
@@ -221,8 +226,10 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         lesson = Lesson.objects.get(id=serializer.validated_data['lesson_id'])
 
-        # Check if this teacher owns the lesson
-        if lesson.teacher.user != request.user:
+        # Check if this teacher owns the lesson OR is replacement
+        is_owner = lesson.teacher.user == request.user
+        is_replacement = (lesson.replacement_teacher and lesson.replacement_teacher.user == request.user)
+        if not is_owner and not is_replacement:
             return Response(
                 {'error': 'Bu sizning darsingiz emas.'},
                 status=status.HTTP_403_FORBIDDEN,
@@ -262,7 +269,9 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         lesson = Lesson.objects.get(id=serializer.validated_data['lesson_id'])
 
-        if lesson.teacher.user != request.user:
+        if lesson.teacher.user != request.user and not (
+            lesson.replacement_teacher and lesson.replacement_teacher.user == request.user
+        ):
             return Response(
                 {'error': 'Bu sizning darsingiz emas.'},
                 status=status.HTTP_403_FORBIDDEN,
@@ -371,3 +380,79 @@ class LessonViewSet(viewsets.ModelViewSet):
             'created_count': count,
             'message': f"{count} ta dars jadvaldan yaratildi.",
         })
+
+    @swagger_auto_schema(
+        method='post',
+        operation_description="🔄 Darsga o'rinbosar teacher biriktirish (Admin)",
+        request_body=ReplaceLessonSerializer,
+        tags=['Dars nazorati'],
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAdmin])
+    def replace(self, request):
+        """Darsga o'rinbosar teacher biriktirish."""
+        serializer = ReplaceLessonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from teachers.models import Teacher
+        lesson = Lesson.objects.get(id=serializer.validated_data['lesson_id'])
+        replacement = Teacher.objects.get(id=serializer.validated_data['replacement_teacher_id'])
+
+        lesson.replacement_teacher = replacement
+        lesson.is_replaced = True
+        lesson.replacement_reason = serializer.validated_data.get('reason', '')
+        lesson.save()
+
+        return Response({
+            'message': "O'rinbosar muvaffaqiyatli biriktirildi!",
+            'lesson': LessonSerializer(lesson).data,
+        })
+
+    @swagger_auto_schema(
+        method='post',
+        operation_description="🔄 O'rinbosarni bekor qilish (Admin)",
+        tags=['Dars nazorati'],
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAdmin], url_path='cancel-replace')
+    def cancel_replace(self, request):
+        """O'rinbosarni bekor qilish."""
+        lesson_id = request.data.get('lesson_id')
+        if not lesson_id:
+            return Response({'error': 'lesson_id kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'error': 'Dars topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+
+        lesson.replacement_teacher = None
+        lesson.is_replaced = False
+        lesson.replacement_reason = ''
+        lesson.save()
+
+        return Response({
+            'message': "O'rinbosar bekor qilindi!",
+            'lesson': LessonSerializer(lesson).data,
+        })
+
+    @swagger_auto_schema(
+        method='get',
+        operation_description="🔄 O'rinbosar darslar ro'yxati",
+        tags=['Dars nazorati'],
+    )
+    @action(detail=False, methods=['get'])
+    def replacements(self, request):
+        """O'rinbosar darslar ro'yxati."""
+        queryset = Lesson.objects.filter(is_replaced=True).select_related(
+            'teacher__user', 'replacement_teacher__user', 'subject', 'school_class',
+        ).order_by('-date')
+
+        user = request.user
+        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
+            from django.db.models import Q
+            teacher = user.teacher_profile
+            queryset = queryset.filter(
+                Q(teacher=teacher) | Q(replacement_teacher=teacher)
+            )
+
+        serializer = LessonSerializer(queryset, many=True)
+        return Response(serializer.data)
