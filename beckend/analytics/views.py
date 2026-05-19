@@ -73,8 +73,11 @@ class TeacherDashboardAnalytics(APIView):
         except:
             return Response({'error': 'Teacher profile not found'}, status=400)
             
-        # Bugungi darslar
-        today_lessons = Lesson.objects.filter(teacher=teacher, date=today).order_by('scheduled_start')
+        # Bugungi darslar (including approved replacements)
+        today_lessons = Lesson.objects.filter(
+            Q(teacher=teacher) | Q(replacement_teacher=teacher, replacement_status=Lesson.ReplacementStatus.APPROVED),
+            date=today
+        ).order_by('scheduled_start')
         # Keyingi dars
         now = timezone.localtime().time()
         next_lesson = today_lessons.filter(scheduled_start__gt=now, status='scheduled').first()

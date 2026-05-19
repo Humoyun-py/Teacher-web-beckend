@@ -208,11 +208,11 @@ export default function TeacherDashboard() {
             </div>
             <div>
               <p className="text-muted" style={{ fontSize: '0.8rem' }}>Keyingi dars</p>
-              <p style={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
-                {nextLesson ? nextLesson.scheduled_start?.slice(0, 5) : '—'}
+              <p style={{ fontWeight: 700, fontSize: nextLesson ? '1.5rem' : '0.95rem', color: nextLesson ? 'var(--text-main)' : 'var(--text-muted)', lineHeight: 1.2 }}>
+                {nextLesson ? nextLesson.scheduled_start?.slice(0, 5) : "Bugun keyingi dars yo'q"}
               </p>
               {nextLesson && (
-                <p className="text-muted" style={{ fontSize: '0.75rem' }}>{nextLesson.subject} — {nextLesson.class}</p>
+                <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>{nextLesson.subject} — {nextLesson.class}</p>
               )}
             </div>
           </div>
