@@ -107,7 +107,7 @@ export default function TeacherDashboard() {
   };
 
   const handleEnd = async (id) => {
-    const notes = prompt("Dars bo'yicha izoh (ixtiyoriy):", '');
+    const notes = await prompt("Dars bo'yicha izoh (ixtiyoriy):", '');
     if (notes === null) return;
     setActionLoading(id + '-end');
     try {

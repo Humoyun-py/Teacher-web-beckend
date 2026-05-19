@@ -28,7 +28,8 @@ import MyReplacements    from './pages/teacher/MyReplacements';
 import Notifications2    from './pages/admin/Notifications'; // teacher ham shu componentni ishlatadi
 
 function App() {
-  const [modal, setModal] = useState(null); // { type: 'alert'|'confirm', message, resolve }
+  const [modal, setModal] = useState(null); // { type: 'alert'|'confirm'|'prompt', message, defaultValue, resolve }
+  const [promptValue, setPromptValue] = useState('');
 
   useEffect(() => {
     window.alert = (msg) => {
@@ -50,10 +51,27 @@ function App() {
         });
       });
     };
+
+    window.prompt = (msg, defaultValue) => {
+      return new Promise((resolve) => {
+        setModal({
+          type: 'prompt',
+          message: String(msg),
+          defaultValue: defaultValue !== undefined ? String(defaultValue) : '',
+          resolve
+        });
+      });
+    };
   }, []);
 
+  useEffect(() => {
+    if (modal && modal.type === 'prompt') {
+      setPromptValue(modal.defaultValue || '');
+    }
+  }, [modal]);
+
   const isSuccess = modal && (modal.message.includes('✅') || modal.message.toLowerCase().includes('muvaffaqiyat') || modal.message.toLowerCase().includes('yaratildi'));
-  const title = modal ? (modal.type === 'confirm' ? 'Tasdiqlash' : (isSuccess ? 'Muvaffaqiyat' : 'Bildirishnoma')) : '';
+  const title = modal ? (modal.type === 'confirm' ? 'Tasdiqlash' : (modal.type === 'prompt' ? 'Ma\'lumot kiriting' : (isSuccess ? 'Muvaffaqiyat' : 'Bildirishnoma'))) : '';
 
   return (
     <>
@@ -107,15 +125,15 @@ function App() {
           }}>
             <div className="flex-center" style={{
               width: '48px', height: '48px', borderRadius: '50%',
-              background: modal.type === 'confirm' 
+              background: (modal.type === 'confirm' || modal.type === 'prompt') 
                 ? 'rgba(99, 102, 241, 0.15)' 
                 : (isSuccess ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'),
-              color: modal.type === 'confirm' 
+              color: (modal.type === 'confirm' || modal.type === 'prompt') 
                 ? 'var(--primary)' 
                 : (isSuccess ? 'var(--success)' : 'var(--warning)'),
               alignSelf: 'center', marginBottom: '0.25rem'
             }}>
-              {modal.type === 'confirm' ? (
+              {(modal.type === 'confirm' || modal.type === 'prompt') ? (
                 <HelpCircle size={24} />
               ) : isSuccess ? (
                 <CheckCircle size={24} />
@@ -133,14 +151,34 @@ function App() {
               </p>
             </div>
 
+            {modal.type === 'prompt' && (
+              <div className="flex-col" style={{ width: '100%' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  style={{ width: '100%', padding: '0.6rem 0.85rem' }}
+                  placeholder="Izoh yozing..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      modal.resolve(promptValue);
+                      setModal(null);
+                    }
+                  }}
+                />
+              </div>
+            )}
+
             <div className="flex-center gap-3" style={{ marginTop: '0.5rem' }}>
-              {modal.type === 'confirm' ? (
+              {(modal.type === 'confirm' || modal.type === 'prompt') ? (
                 <>
                   <button
                     className="btn btn-outline"
                     style={{ flex: 1, padding: '0.6rem' }}
                     onClick={() => {
-                      modal.resolve(false);
+                      modal.resolve(null);
                       setModal(null);
                     }}
                   >
@@ -150,11 +188,11 @@ function App() {
                     className="btn btn-primary"
                     style={{ flex: 1, padding: '0.6rem' }}
                     onClick={() => {
-                      modal.resolve(true);
+                      modal.resolve(modal.type === 'prompt' ? promptValue : true);
                       setModal(null);
                     }}
                   >
-                    <Check size={16} /> Tasdiqlash
+                    <Check size={16} /> OK
                   </button>
                 </>
               ) : (
