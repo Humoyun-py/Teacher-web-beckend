@@ -95,11 +95,11 @@ export default function VideoReviewList() {
               {/* Photo preview */}
               <div
                 style={{ height: '180px', borderRadius: 'var(--radius-md)', overflow: 'hidden', cursor: photo.photo ? 'pointer' : 'default', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                onClick={() => photo.photo && setSelectedPhoto(photo.photo)}
+                onClick={() => photo.photo && setSelectedPhoto(api.getPhotoUrl(photo.photo))}
                 title="Kattalashtirish"
               >
                 {photo.photo ? (
-                  <img src={photo.photo} alt="Dars" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={api.getPhotoUrl(photo.photo)} alt="Dars" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <Camera size={48} color="rgba(255,255,255,0.15)" />
                 )}
@@ -142,7 +142,7 @@ export default function VideoReviewList() {
                   </div>
                 ) : (
                   <div className="flex-center gap-2">
-                    <button onClick={() => photo.photo && setSelectedPhoto(photo.photo)} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}>
+                    <button onClick={() => photo.photo && setSelectedPhoto(api.getPhotoUrl(photo.photo))} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}>
                       <Eye size={15} /> Ko'rish
                     </button>
                     <button onClick={() => setReviewing(photo.id)} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.85rem' }}>

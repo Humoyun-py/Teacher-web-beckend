@@ -135,7 +135,7 @@ export default function TeacherStats() {
               {photos.map(p => (
                 <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 'var(--radius-sm)', overflow: 'hidden', background: 'var(--bg-darker)' }}>
                   {p.photo ? (
-                    <img src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={api.getPhotoUrl(p.photo)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div className="flex-center" style={{ height: '100%' }}>
                       <Camera size={20} color="var(--text-muted)" />

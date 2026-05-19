@@ -1,8 +1,6 @@
 // ─── Avtomatik URL aniqlash ───────────────────────────────────────────────────
 // Localhost'da ishlayotgan bo'lsa → lokal backend, aks holda → Render production
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000/api/v1'
-  : 'https://teacher-web-beckend.onrender.com/api/v1';
+const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1';
 
 // ─── Token yangilash ──────────────────────────────────────────────────────────
 let isRefreshing = false;
@@ -307,4 +305,12 @@ export const api = {
       body: JSON.stringify({ notification_ids }),
     }),
   getUnreadCount: () => request('/notifications/unread_count/'),
+
+  getPhotoUrl: (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const host = 'https://teacher-web-beckend.onrender.com';
+    const path = url.startsWith('/') ? url : '/' + url;
+    return `${host}${path}`;
+  },
 };

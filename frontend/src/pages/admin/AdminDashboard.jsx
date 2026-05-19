@@ -190,11 +190,11 @@ export default function AdminDashboard() {
                   <div className="flex-center gap-3">
                     <div
                       style={{ width: '46px', height: '46px', borderRadius: '8px', background: 'var(--bg-darker)', overflow: 'hidden', cursor: photo.photo ? 'pointer' : 'default', flexShrink: 0 }}
-                      onClick={() => photo.photo && setSelectedPhoto(photo.photo)}
+                      onClick={() => photo.photo && setSelectedPhoto(api.getPhotoUrl(photo.photo))}
                       title="Rasmni kattalashtirish"
                     >
                       {photo.photo ? (
-                        <img src={photo.photo} alt="Dars" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={api.getPhotoUrl(photo.photo)} alt="Dars" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <div className="flex-center" style={{ height: '100%' }}>
                           <Camera size={16} color="var(--primary)" />
