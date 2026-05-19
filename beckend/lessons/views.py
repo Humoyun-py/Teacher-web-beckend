@@ -383,29 +383,88 @@ class LessonViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         method='post',
-        operation_description="🔄 Darsga o'rinbosar teacher biriktirish (Admin)",
+        operation_description="🔄 Darsga o'rinbosar so'rash yoki biriktirish",
         request_body=ReplaceLessonSerializer,
         tags=['Dars nazorati'],
     )
-    @action(detail=False, methods=['post'], permission_classes=[IsAdmin])
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def replace(self, request):
-        """Darsga o'rinbosar teacher biriktirish."""
+        """Darsga o'rinbosar so'rash (Teacher) yoki biriktirish (Admin)."""
         serializer = ReplaceLessonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         from teachers.models import Teacher
         lesson = Lesson.objects.get(id=serializer.validated_data['lesson_id'])
-        replacement = Teacher.objects.get(id=serializer.validated_data['replacement_teacher_id'])
+        replacement_id = serializer.validated_data.get('replacement_teacher_id')
+        replacement = Teacher.objects.get(id=replacement_id) if replacement_id else None
 
-        lesson.replacement_teacher = replacement
-        lesson.is_replaced = True
-        lesson.replacement_reason = serializer.validated_data.get('reason', '')
+        user = request.user
+        
+        # Admin action
+        if getattr(user, 'role', None) == 'admin':
+            if not replacement:
+                return Response({'error': 'O\'rinbosar teacher tanlanishi shart.'}, status=status.HTTP_400_BAD_REQUEST)
+            lesson.replacement_teacher = replacement
+            lesson.is_replaced = True
+            lesson.replacement_status = Lesson.ReplacementStatus.APPROVED
+            lesson.replacement_reason = serializer.validated_data.get('reason', '')
+            lesson.save()
+            return Response({
+                'message': "O'rinbosar muvaffaqiyatli biriktirildi!",
+                'lesson': LessonSerializer(lesson).data,
+            })
+        
+        # Teacher action
+        elif getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
+            if lesson.teacher.user != user:
+                return Response({'error': 'Siz faqat o\'z darsingiz uchun o\'rinbosar so\'ray olasiz.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            lesson.replacement_teacher = replacement
+            lesson.is_replaced = False
+            lesson.replacement_status = Lesson.ReplacementStatus.PENDING
+            lesson.replacement_reason = serializer.validated_data.get('reason', '')
+            lesson.save()
+            return Response({
+                'message': "O'rinbosar so'rovi yuborildi. Admin tasdiqlashi kutilmoqda.",
+                'lesson': LessonSerializer(lesson).data,
+            })
+            
+        return Response({'error': 'Ruxsat etilmagan.'}, status=status.HTTP_403_FORBIDDEN)
+
+    @swagger_auto_schema(
+        method='post',
+        operation_description="🔄 O'rinbosar so'rovini tasdiqlash yoki rad etish (Admin)",
+        tags=['Dars nazorati'],
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAdmin], url_path='approve-replace')
+    def approve_replace(self, request):
+        """O'rinbosar so'rovini tasdiqlash yoki rad etish."""
+        lesson_id = request.data.get('lesson_id')
+        action_type = request.data.get('action') # 'approve' or 'reject'
+        
+        if not lesson_id or not action_type:
+            return Response({'error': 'lesson_id va action kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({'error': 'Dars topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if action_type == 'approve':
+            if not lesson.replacement_teacher:
+                return Response({'error': 'Tasdiqlash uchun o\'rinbosar teacher biriktirilgan bo\'lishi kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+            lesson.replacement_status = Lesson.ReplacementStatus.APPROVED
+            lesson.is_replaced = True
+            msg = "So'rov tasdiqlandi!"
+        elif action_type == 'reject':
+            lesson.replacement_status = Lesson.ReplacementStatus.REJECTED
+            lesson.is_replaced = False
+            msg = "So'rov rad etildi!"
+        else:
+            return Response({'error': 'Noto\'g\'ri action.'}, status=status.HTTP_400_BAD_REQUEST)
+            
         lesson.save()
-
-        return Response({
-            'message': "O'rinbosar muvaffaqiyatli biriktirildi!",
-            'lesson': LessonSerializer(lesson).data,
-        })
+        return Response({'message': msg, 'lesson': LessonSerializer(lesson).data})
 
     @swagger_auto_schema(
         method='post',
@@ -426,6 +485,7 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         lesson.replacement_teacher = None
         lesson.is_replaced = False
+        lesson.replacement_status = Lesson.ReplacementStatus.NONE
         lesson.replacement_reason = ''
         lesson.save()
 
@@ -441,8 +501,13 @@ class LessonViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def replacements(self, request):
-        """O'rinbosar darslar ro'yxati."""
-        queryset = Lesson.objects.filter(is_replaced=True).select_related(
+        """O'rinbosar darslar va so'rovlar ro'yxati."""
+        from django.db.models import Q
+        
+        # Return lessons where is_replaced is True OR replacement_status is not 'none'
+        queryset = Lesson.objects.filter(
+            Q(is_replaced=True) | ~Q(replacement_status=Lesson.ReplacementStatus.NONE)
+        ).select_related(
             'teacher__user', 'replacement_teacher__user', 'subject', 'school_class',
         ).order_by('-date')
 

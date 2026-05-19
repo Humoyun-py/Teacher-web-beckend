@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Plus, X, Loader, Trash2 } from 'lucide-react';
+import { RefreshCw, Plus, X, Loader, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { api } from '../../api';
 
 export default function Replacements() {
@@ -15,9 +15,10 @@ export default function Replacements() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const today = new Date().toISOString().split('T')[0];
       const [repRes, lesRes, tchRes] = await Promise.all([
         api.getReplacements(),
-        api.getLessons('?status=scheduled'),
+        api.getLessons(`?date__gte=${today}`),
         api.getTeachers(),
       ]);
       setReplacements(Array.isArray(repRes) ? repRes : repRes.results || []);
@@ -52,6 +53,16 @@ export default function Replacements() {
     if (!window.confirm("O'rinbosarni bekor qilmoqchimisiz?")) return;
     try {
       await api.cancelReplace(lessonId);
+      await loadData();
+    } catch (err) {
+      alert("Xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
+    }
+  };
+
+  const handleApproveReject = async (lessonId, action) => {
+    if (!window.confirm(`So'rovni ${action === 'approve' ? 'tasdiqlaysizmi' : 'rad etasizmi'}?`)) return;
+    try {
+      await api.approveReplace(lessonId, action);
       await loadData();
     } catch (err) {
       alert("Xatolik: " + (err?.data ? JSON.stringify(err.data) : err?.message));
@@ -109,16 +120,34 @@ export default function Replacements() {
                     <td style={{ color: 'var(--primary)', fontWeight: 600 }}>{r.replacement_teacher_name}</td>
                     <td style={{ color: 'var(--text-muted)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.replacement_reason || '-'}</td>
                     <td>
-                      <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'in_progress' ? 'badge-warning' : 'badge-info'}`}>
-                        {r.status_display}
-                      </span>
+                      {r.replacement_status === 'pending' ? (
+                        <span className="badge badge-warning">Kutilmoqda</span>
+                      ) : r.replacement_status === 'rejected' ? (
+                        <span className="badge badge-danger">Rad etilgan</span>
+                      ) : (
+                        <span className={`badge ${r.status === 'completed' ? 'badge-success' : r.status === 'in_progress' ? 'badge-warning' : 'badge-info'}`}>
+                          {r.status_display}
+                        </span>
+                      )}
                     </td>
                     <td>
-                      {r.status === 'scheduled' && (
-                        <button onClick={() => handleCancel(r.id)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--surface-border)' }} title="Bekor qilish">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
+                        {r.replacement_status === 'pending' && (
+                          <>
+                            <button onClick={() => handleApproveReject(r.id, 'approve')} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--success)', borderColor: 'var(--surface-border)' }} title="Tasdiqlash">
+                              <CheckCircle size={16} />
+                            </button>
+                            <button onClick={() => handleApproveReject(r.id, 'reject')} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--surface-border)' }} title="Rad etish">
+                              <XCircle size={16} />
+                            </button>
+                          </>
+                        )}
+                        {r.replacement_status !== 'pending' && r.status === 'scheduled' && (
+                          <button onClick={() => handleCancel(r.id)} className="btn-outline flex-center" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--surface-border)' }} title="Bekor qilish">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -142,7 +171,7 @@ export default function Replacements() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Darsni tanlang</label>
                 <select className="input-field" value={form.lesson_id} onChange={e => setForm({ ...form, lesson_id: e.target.value })} required>
                   <option value="">-- Dars tanlang --</option>
-                  {lessons.filter(l => !l.is_replaced).map(l => (
+                  {lessons.filter(l => !l.is_replaced && l.replacement_status !== 'pending' && l.status === 'scheduled').map(l => (
                     <option key={l.id} value={l.id}>
                       {l.date} | {l.subject_name} | {l.teacher_name} | {l.scheduled_start}
                     </option>

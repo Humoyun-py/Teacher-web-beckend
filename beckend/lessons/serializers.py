@@ -90,6 +90,9 @@ class LessonSerializer(serializers.ModelSerializer):
         source='get_status_display', read_only=True,
     )
     replacement_teacher_name = serializers.SerializerMethodField()
+    replacement_status_display = serializers.CharField(
+        source='get_replacement_status_display', read_only=True,
+    )
     duration_minutes = serializers.SerializerMethodField()
 
     class Meta:
@@ -100,7 +103,7 @@ class LessonSerializer(serializers.ModelSerializer):
             'date', 'scheduled_start', 'scheduled_end',
             'actual_start', 'actual_end', 'status', 'status_display',
             'is_replaced', 'replacement_teacher', 'replacement_teacher_name',
-            'replacement_reason',
+            'replacement_status', 'replacement_status_display', 'replacement_reason',
             'notes', 'room', 'started_late', 'duration_minutes',
             'created_at', 'updated_at',
         ]
@@ -178,7 +181,7 @@ class ReplaceLessonSerializer(serializers.Serializer):
     """Serializer for replacing a teacher in a lesson."""
 
     lesson_id = serializers.IntegerField()
-    replacement_teacher_id = serializers.IntegerField()
+    replacement_teacher_id = serializers.IntegerField(required=False, allow_null=True)
     reason = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_lesson_id(self, value):
@@ -189,6 +192,8 @@ class ReplaceLessonSerializer(serializers.Serializer):
         return value
 
     def validate_replacement_teacher_id(self, value):
+        if not value:
+            return value
         from teachers.models import Teacher
         try:
             Teacher.objects.get(id=value)

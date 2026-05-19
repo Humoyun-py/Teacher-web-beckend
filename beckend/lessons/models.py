@@ -150,6 +150,12 @@ class Lesson(models.Model):
         default=Status.SCHEDULED,
         verbose_name='Status',
     )
+    class ReplacementStatus(models.TextChoices):
+        NONE = 'none', "Yo'q"
+        PENDING = 'pending', 'Kutilmoqda'
+        APPROVED = 'approved', 'Tasdiqlangan'
+        REJECTED = 'rejected', 'Rad etilgan'
+
     replacement_teacher = models.ForeignKey(
         Teacher, on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -159,6 +165,12 @@ class Lesson(models.Model):
     is_replaced = models.BooleanField(
         default=False,
         verbose_name="O'rinbosar bilan",
+    )
+    replacement_status = models.CharField(
+        max_length=15,
+        choices=ReplacementStatus.choices,
+        default=ReplacementStatus.NONE,
+        verbose_name="O'rinbosar statusi",
     )
     replacement_reason = models.TextField(
         blank=True,

@@ -235,6 +235,8 @@ export const api = {
   // ── Replacements ──
   replaceLesson: (lesson_id, replacement_teacher_id, reason = '') =>
     request('/lessons/replace/', { method: 'POST', body: JSON.stringify({ lesson_id, replacement_teacher_id, reason }) }),
+  approveReplace: (lesson_id, action) =>
+    request('/lessons/approve-replace/', { method: 'POST', body: JSON.stringify({ lesson_id, action }) }),
   cancelReplace: (lesson_id) =>
     request('/lessons/cancel-replace/', { method: 'POST', body: JSON.stringify({ lesson_id }) }),
   getReplacements: () => request('/lessons/replacements/'),
