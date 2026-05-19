@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AlertTriangle, HelpCircle, Check, X } from 'lucide-react';
+import { AlertTriangle, HelpCircle, Check, X, CheckCircle } from 'lucide-react';
 
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -51,6 +51,9 @@ function App() {
       });
     };
   }, []);
+
+  const isSuccess = modal && (modal.message.includes('✅') || modal.message.toLowerCase().includes('muvaffaqiyat') || modal.message.toLowerCase().includes('yaratildi'));
+  const title = modal ? (modal.type === 'confirm' ? 'Tasdiqlash' : (isSuccess ? 'Muvaffaqiyat' : 'Bildirishnoma')) : '';
 
   return (
     <>
@@ -104,16 +107,26 @@ function App() {
           }}>
             <div className="flex-center" style={{
               width: '48px', height: '48px', borderRadius: '50%',
-              background: modal.type === 'confirm' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-              color: modal.type === 'confirm' ? 'var(--primary)' : 'var(--warning)',
+              background: modal.type === 'confirm' 
+                ? 'rgba(99, 102, 241, 0.15)' 
+                : (isSuccess ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'),
+              color: modal.type === 'confirm' 
+                ? 'var(--primary)' 
+                : (isSuccess ? 'var(--success)' : 'var(--warning)'),
               alignSelf: 'center', marginBottom: '0.25rem'
             }}>
-              {modal.type === 'confirm' ? <HelpCircle size={24} /> : <AlertTriangle size={24} />}
+              {modal.type === 'confirm' ? (
+                <HelpCircle size={24} />
+              ) : isSuccess ? (
+                <CheckCircle size={24} />
+              ) : (
+                <AlertTriangle size={24} />
+              )}
             </div>
 
             <div style={{ textAlign: 'center' }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                {modal.type === 'confirm' ? 'Tasdiqlash' : 'Bildirishnoma'}
+                {title}
               </h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
                 {modal.message}
