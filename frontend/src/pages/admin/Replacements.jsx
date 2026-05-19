@@ -166,10 +166,10 @@ export default function Replacements() {
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleReplace} className="flex-col gap-4">
+            <form onSubmit={handleReplace} className="flex-col gap-4" autoComplete="off">
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Darsni tanlang</label>
-                <select className="input-field" value={form.lesson_id} onChange={e => setForm({ ...form, lesson_id: e.target.value })} required>
+                <select className="input-field" value={form.lesson_id} onChange={e => setForm({ ...form, lesson_id: e.target.value })} required autoComplete="off">
                   <option value="">-- Dars tanlang --</option>
                   {lessons.filter(l => !l.is_replaced && l.replacement_status !== 'pending' && l.status === 'scheduled').map(l => (
                     <option key={l.id} value={l.id}>
@@ -181,7 +181,7 @@ export default function Replacements() {
 
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>O'rinbosar teacher</label>
-                <select className="input-field" value={form.replacement_teacher_id} onChange={e => setForm({ ...form, replacement_teacher_id: e.target.value })} required>
+                <select className="input-field" value={form.replacement_teacher_id} onChange={e => setForm({ ...form, replacement_teacher_id: e.target.value })} required autoComplete="off">
                   <option value="">-- Teacher tanlang --</option>
                   {teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.full_name || `${t.first_name} ${t.last_name}`}</option>
