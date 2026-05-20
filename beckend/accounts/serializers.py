@@ -20,6 +20,12 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.is_superuser:
+            data['role'] = 'admin'
+        return data
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating users."""
