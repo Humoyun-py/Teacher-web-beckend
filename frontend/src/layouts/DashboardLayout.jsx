@@ -27,11 +27,12 @@ export default function DashboardLayout({ role }) {
     const parsedUser = JSON.parse(userStr);
 
     // Role tekshiruvi: admin teacher sahifasida bo'lmasin va aksincha
-    if (role === 'admin' && parsedUser.role !== 'admin') {
+    const userIsAdmin = parsedUser.role === 'admin' || parsedUser.is_superuser || parsedUser.is_staff;
+    if (role === 'admin' && !userIsAdmin) {
       navigate('/teacher', { replace: true });
       return;
     }
-    if (role === 'teacher' && parsedUser.role === 'admin') {
+    if (role === 'teacher' && userIsAdmin) {
       navigate('/admin', { replace: true });
       return;
     }

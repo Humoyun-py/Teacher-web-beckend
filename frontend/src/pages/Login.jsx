@@ -26,7 +26,8 @@ export default function Login() {
       localStorage.setItem('user', JSON.stringify(res.user));
       
       // Navigate by role
-      if (res.user && res.user.role === 'admin') {
+      const isAdmin = res.user && (res.user.role === 'admin' || res.user.is_superuser || res.user.is_staff);
+      if (isAdmin) {
          navigate('/admin');
       } else {
          navigate('/teacher');
