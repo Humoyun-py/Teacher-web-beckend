@@ -65,8 +65,8 @@ export const request = async (endpoint, options = {}, retry = true) => {
     headers,
   });
 
-  // 401 or 403 → token yangilash
-  if ((response.status === 401 || response.status === 403) && retry) {
+  // 401 → token yangilash (403 = permission error, refresh qilinmaydi)
+  if (response.status === 401 && retry) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({

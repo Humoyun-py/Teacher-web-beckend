@@ -399,9 +399,10 @@ class LessonViewSet(viewsets.ModelViewSet):
         replacement = Teacher.objects.get(id=replacement_id) if replacement_id else None
 
         user = request.user
+        is_admin_user = (getattr(user, 'role', None) == 'admin' or user.is_superuser or user.is_staff)
         
         # Admin action
-        if getattr(user, 'role', None) == 'admin':
+        if is_admin_user:
             if not replacement:
                 return Response({'error': 'O\'rinbosar teacher tanlanishi shart.'}, status=status.HTTP_400_BAD_REQUEST)
             lesson.replacement_teacher = replacement
@@ -512,7 +513,8 @@ class LessonViewSet(viewsets.ModelViewSet):
         ).order_by('-date')
 
         user = request.user
-        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
+        is_admin_user = (getattr(user, 'role', None) == 'admin' or user.is_superuser or user.is_staff)
+        if not is_admin_user and getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
             from django.db.models import Q
             teacher = user.teacher_profile
             queryset = queryset.filter(
