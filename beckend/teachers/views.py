@@ -133,9 +133,7 @@ class TeacherViewSet(viewsets.ModelViewSet):
         return TeacherSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'destroy'):
-            return [IsAdmin()]
-        if self.action in ('update', 'partial_update'):
+        if self.action in ('create', 'destroy', 'update', 'partial_update', 'assign_subjects', 'assign_classes', 'salary_report'):
             return [IsAdmin()]
         return [IsAdminOrReadOnly()]
 

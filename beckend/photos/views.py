@@ -45,7 +45,7 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [IsTeacher()]
-        if self.action in ('destroy',):
+        if self.action in ('destroy', 'review', 'pending', 'missing', 'stats'):
             return [IsAdmin()]
         return [IsAdminOrReadOnly()]
 

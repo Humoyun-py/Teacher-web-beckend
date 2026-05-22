@@ -255,7 +255,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return AttendanceSerializer
 
     def get_permissions(self):
-        if self.action in ('update', 'partial_update', 'destroy'):
+        if self.action in ('update', 'partial_update', 'destroy', 'mark_absent'):
             return [IsAdmin()]
         return [IsAdminOrReadOnly()]
 

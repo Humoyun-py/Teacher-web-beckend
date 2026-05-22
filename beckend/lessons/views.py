@@ -163,10 +163,12 @@ class LessonViewSet(viewsets.ModelViewSet):
         return LessonSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'destroy'):
+        if self.action in ('create', 'destroy', 'generate_from_schedule', 'approve_replace', 'cancel_replace'):
             return [IsAdmin()]
         if self.action in ('start', 'end', 'today'):
             return [IsTeacher()]
+        if self.action == 'replace':
+            return [permissions.IsAuthenticated()]
         return [IsAdminOrReadOnly()]
 
     def get_queryset(self):
