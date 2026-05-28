@@ -64,6 +64,38 @@ function App() {
     };
   }, []);
 
+  // ── Avtomatik logout: 1 kundan keyin token o'chib ketadi ──
+  useEffect(() => {
+    const TOKEN_LIFETIME_MS = 24 * 60 * 60 * 1000; // 1 kun = 86400000 ms
+
+    const checkTokenExpiry = () => {
+      const loginTime = localStorage.getItem('login_time');
+      const accessToken = localStorage.getItem('access_token');
+
+      // Agar token yo'q bo'lsa — tekshirish shart emas
+      if (!accessToken || !loginTime) return;
+
+      const elapsed = Date.now() - parseInt(loginTime, 10);
+
+      if (elapsed >= TOKEN_LIFETIME_MS) {
+        // 1 kun o'tdi — avtomatik logout
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('login_time');
+        window.location.href = '/';
+      }
+    };
+
+    // Darhol tekshirish (sahifa yuklanganda)
+    checkTokenExpiry();
+
+    // Har 60 soniyada tekshirish
+    const interval = setInterval(checkTokenExpiry, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (modal && modal.type === 'prompt') {
       setPromptValue(modal.defaultValue || '');

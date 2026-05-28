@@ -160,6 +160,6 @@ MAX_PHOTO_SIZE_MB = 10
 # JWT settings
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
 JWT_ACCESS_TOKEN_LIFETIME_MINUTES = 60 * 24  # 24 hours
-JWT_REFRESH_TOKEN_LIFETIME_DAYS = 7
+JWT_REFRESH_TOKEN_LIFETIME_DAYS = 1  # 1 kun — keyin qayta login qilish kerak
 
 LOGIN_URL = '/admin/login/'
