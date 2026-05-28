@@ -9,7 +9,7 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from .views import api_root
+from .views import api_root, health_check
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -56,6 +56,7 @@ urlpatterns = [
 
     # API endpoints
     path('api/v1/', api_root, name='api-root'),
+    path('api/v1/ping/', health_check, name='health-check'),
     path('api/v1/auth/', include('accounts.urls')),
     path('api/v1/teachers/', include('teachers.urls')),
     path('api/v1/lessons/', include('lessons.urls')),

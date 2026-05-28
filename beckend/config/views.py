@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from django.utils import timezone
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -16,3 +17,14 @@ def api_root(request, format=None):
         'notifications': '/api/v1/notifications/',
         'swagger': reverse('schema-swagger-ui', request=request, format=format),
     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """Server holatini tekshirish — har 1 daqiqada ping qilish uchun."""
+    return Response({
+        'status': 'ok',
+        'time': timezone.now().isoformat(),
+    })
+

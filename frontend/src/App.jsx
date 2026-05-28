@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AlertTriangle, HelpCircle, Check, X, CheckCircle } from 'lucide-react';
 
+import { pingServer } from './api';
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -65,6 +66,7 @@ function App() {
   }, []);
 
   // ── Avtomatik logout: 1 kundan keyin token o'chib ketadi ──
+  // ── Backend ping: har 1 daqiqada server uyg'oq turadi ──
   useEffect(() => {
     const TOKEN_LIFETIME_MS = 24 * 60 * 60 * 1000; // 1 kun = 86400000 ms
 
@@ -90,8 +92,14 @@ function App() {
     // Darhol tekshirish (sahifa yuklanganda)
     checkTokenExpiry();
 
-    // Har 60 soniyada tekshirish
-    const interval = setInterval(checkTokenExpiry, 60 * 1000);
+    // Darhol ping yuborish (server uyg'onsin)
+    pingServer();
+
+    // Har 60 soniyada: token tekshirish + server ping
+    const interval = setInterval(() => {
+      checkTokenExpiry();
+      pingServer();
+    }, 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

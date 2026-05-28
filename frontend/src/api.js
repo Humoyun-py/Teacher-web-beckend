@@ -117,6 +117,16 @@ export const requestFormData = async (endpoint, formData, method = 'POST') => {
   return data;
 };
 
+// ─── Server ping (Render uyquga ketmasin) ─────────────────────────────────────
+export const pingServer = async () => {
+  try {
+    await fetch(`${BASE_URL}/ping/`, { method: 'GET' });
+    console.log('🏓 Server ping OK');
+  } catch (e) {
+    console.warn('⚠️ Server ping failed:', e.message);
+  }
+};
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 export const api = {
 
