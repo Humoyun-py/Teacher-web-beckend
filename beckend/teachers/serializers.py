@@ -28,8 +28,8 @@ class SchoolClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = SchoolClass
         fields = [
-            'id', 'name', 'grade', 'section', 'capacity',
-            'is_active', 'teachers_count', 'created_at',
+            'id', 'name', 'grade', 'section', 'room', 'floor',
+            'capacity', 'is_active', 'teachers_count', 'created_at',
         ]
 
     def get_teachers_count(self, obj):

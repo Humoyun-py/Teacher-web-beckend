@@ -41,9 +41,13 @@ class AttendanceApiTests(APITestCase):
         res = self.client.post('/api/v1/attendance/check-in/', {'qr_code': str(qr.code)})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         
-        # Qayta urinib ko'rishi xatolik berishi kerak
+        # Qayta urinib ko'rishi check-out bo'lishi kerak (status 200)
         res2 = self.client.post('/api/v1/attendance/check-in/', {'qr_code': str(qr.code)})
-        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res2.status_code, status.HTTP_200_OK)
+        
+        # Uchinchi marta urinib ko'rishi xatolik berishi kerak (status 400)
+        res3 = self.client.post('/api/v1/attendance/check-in/', {'qr_code': str(qr.code)})
+        self.assertEqual(res3.status_code, status.HTTP_400_BAD_REQUEST)
         
     def test_attendance_list(self):
         """Davomat o'tganlar listini admin (GET) qilib ko'rishi"""

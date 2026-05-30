@@ -21,6 +21,12 @@ class LessonScheduleSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(
         source='school_class.name', read_only=True,
     )
+    class_room = serializers.CharField(
+        source='school_class.room', read_only=True,
+    )
+    class_floor = serializers.IntegerField(
+        source='school_class.floor', read_only=True,
+    )
     day_name = serializers.CharField(
         source='get_day_of_week_display', read_only=True,
     )
@@ -30,7 +36,8 @@ class LessonScheduleSerializer(serializers.ModelSerializer):
         model = LessonSchedule
         fields = [
             'id', 'teacher', 'teacher_name', 'subject', 'subject_name',
-            'school_class', 'class_name', 'day_of_week', 'day_name',
+            'school_class', 'class_name', 'class_room', 'class_floor',
+            'day_of_week', 'day_name',
             'start_time', 'end_time', 'room', 'is_active',
             'has_conflict', 'created_at', 'updated_at',
         ]
@@ -86,6 +93,12 @@ class LessonSerializer(serializers.ModelSerializer):
     class_name = serializers.CharField(
         source='school_class.name', read_only=True,
     )
+    class_room = serializers.CharField(
+        source='school_class.room', read_only=True,
+    )
+    class_floor = serializers.IntegerField(
+        source='school_class.floor', read_only=True,
+    )
     status_display = serializers.CharField(
         source='get_status_display', read_only=True,
     )
@@ -100,6 +113,7 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'schedule', 'teacher', 'teacher_name',
             'subject', 'subject_name', 'school_class', 'class_name',
+            'class_room', 'class_floor',
             'date', 'scheduled_start', 'scheduled_end',
             'actual_start', 'actual_end', 'status', 'status_display',
             'is_replaced', 'replacement_teacher', 'replacement_teacher_name',

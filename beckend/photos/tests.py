@@ -30,9 +30,17 @@ class PhotosApiTests(APITestCase):
         """Teacher fayl upload (POST) orqali rasm yubora oladimi? """
         self.client.force_authenticate(user=self.teacher_user)
         
+        from PIL import Image
+        import io
+        
+        img = Image.new('RGB', (10, 10), color='red')
+        img_io = io.BytesIO()
+        img.save(img_io, format='JPEG')
+        img_io.seek(0)
+        
         fake_image = SimpleUploadedFile(
             name='test_image.jpg', 
-            content=b'fakeimagecontent123',
+            content=img_io.read(),
             content_type='image/jpeg'
         )
         

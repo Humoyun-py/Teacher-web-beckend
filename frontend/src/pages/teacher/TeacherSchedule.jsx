@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, BookOpen, PlayCircle, StopCircle, Camera, Loader, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, BookOpen, PlayCircle, StopCircle, Camera, Loader, CheckCircle, AlertCircle, MapPin, Building2 } from 'lucide-react';
 import { api } from '../../api';
 
 const STATUS_LABELS = {
@@ -79,7 +79,7 @@ export default function TeacherSchedule() {
       <div className="flex-between">
         <div>
           <h1 className="heading-2">Mening Darslarim</h1>
-          <p className="text-muted">Kunlik darslar ro'yxati va boshqaruv</p>
+          <p className="text-muted">Kunlik darslar — xona, etaj va vaqtlar bilan</p>
         </div>
         <div className="flex-center gap-3">
           <input
@@ -125,22 +125,52 @@ export default function TeacherSchedule() {
                         <span className="badge badge-warning" style={{ fontSize: '0.65rem', textTransform: 'none', padding: '0.15rem 0.4rem' }}>O'rinbosar dars</span>
                       )}
                     </h3>
-                    <div className="flex-center gap-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <div className="flex-center gap-3" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                      {/* Boshlanish va Tugash vaqti */}
                       <span className="flex-center gap-1">
                         <Clock size={13} />
                         {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
                       </span>
+                      {/* Xona va Etaj */}
+                      {(lesson.room || lesson.class_room) && (
+                        <span className="flex-center gap-1" style={{ color: 'var(--accent)' }}>
+                          <MapPin size={12} />
+                          Xona: {lesson.room || lesson.class_room}
+                        </span>
+                      )}
+                      {lesson.class_floor && (
+                        <span className="flex-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                          <Building2 size={12} />
+                          {lesson.class_floor}-etaj
+                        </span>
+                      )}
                       {lesson.is_replaced && lesson.replacement_status === 'approved' && lesson.teacher_name && (
                         <span style={{ color: 'var(--text-muted)' }}>
                           ({lesson.teacher_name} o'rniga)
                         </span>
                       )}
-                      {lesson.actual_start && (
-                        <span style={{ color: 'var(--accent)' }}>
-                          Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
                     </div>
+                    {/* Haqiqiy vaqtlar */}
+                    {lesson.actual_start && (
+                      <div style={{ marginTop: '0.3rem', fontSize: '0.8rem' }}>
+                        <span style={{ color: 'var(--success)' }}>
+                          ▶ Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {lesson.actual_end && (
+                          <span style={{ color: 'var(--accent)', marginLeft: '0.75rem' }}>
+                            ■ Tugadi: {new Date(lesson.actual_end).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                            {lesson.duration_minutes && (
+                              <span className="text-muted" style={{ fontSize: '0.72rem', marginLeft: '4px' }}>
+                                ({lesson.duration_minutes} daqiqa)
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        {lesson.started_late && (
+                          <span style={{ color: 'var(--danger)', marginLeft: '0.75rem', fontSize: '0.75rem' }}>⚠ Kech boshlangan</span>
+                        )}
+                      </div>
+                    )}
                     {lesson.notes && (
                       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>📝 {lesson.notes}</p>
                     )}

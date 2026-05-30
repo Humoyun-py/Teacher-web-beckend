@@ -13,9 +13,9 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(SchoolClass)
 class SchoolClassAdmin(admin.ModelAdmin):
-    list_display = ['name', 'grade', 'section', 'capacity', 'is_active']
-    list_filter = ['grade', 'is_active']
-    search_fields = ['name']
+    list_display = ['name', 'grade', 'section', 'room', 'floor', 'capacity', 'is_active']
+    list_filter = ['grade', 'is_active', 'floor']
+    search_fields = ['name', 'room']
 
 
 @admin.register(Teacher)

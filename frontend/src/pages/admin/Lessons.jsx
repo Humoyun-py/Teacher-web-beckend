@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlayCircle, StopCircle, Loader, RefreshCw, Plus, X, Check, Clock, AlertTriangle } from 'lucide-react';
+import { BookOpen, PlayCircle, StopCircle, Loader, RefreshCw, Clock, AlertTriangle, MapPin, Building2 } from 'lucide-react';
 import { api } from '../../api';
 
 const STATUS_COLORS = {
@@ -70,13 +70,15 @@ export default function Lessons() {
     }
   };
 
+  const formatTime = (timeStr) => timeStr?.slice(0, 5) || '—';
+
   return (
     <div className="flex-col gap-6 animate-fade-in" style={{ height: '100%' }}>
       {/* Header */}
       <div className="flex-between">
         <div>
           <h1 className="heading-2">Darslar boshqaruvi</h1>
-          <p className="text-muted">Barcha darslarni kuzatish va boshqarish</p>
+          <p className="text-muted">Barcha darslarni kuzatish — xona, etaj, vaqtlar bilan</p>
         </div>
         <div className="flex-center gap-2">
           <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleMarkAbsent}>
@@ -132,7 +134,9 @@ export default function Lessons() {
                 <th>Fan / Sinf</th>
                 <th>O'qituvchi</th>
                 <th>Sana</th>
-                <th>Vaqt</th>
+                <th>Reja vaqti</th>
+                <th>Haqiqiy vaqti</th>
+                <th>Xona / Etaj</th>
                 <th>Status</th>
                 <th>Amallar</th>
               </tr>
@@ -146,21 +150,68 @@ export default function Lessons() {
                   </td>
                   <td style={{ color: 'var(--text-muted)' }}>
                     {lesson.teacher_name || '—'}
+                    {lesson.is_replaced && lesson.replacement_teacher_name && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--warning)', marginTop: '0.1rem' }}>
+                        ↔ {lesson.replacement_teacher_name}
+                      </div>
+                    )}
                   </td>
                   <td style={{ color: 'var(--text-muted)' }}>
                     {lesson.date || '—'}
                   </td>
+                  {/* Reja vaqti - boshlanish va tugash */}
                   <td>
                     <div className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
-                      <Clock size={12} color="var(--text-muted)" />
-                      <span className="text-muted">
-                        {lesson.scheduled_start?.slice(0, 5)} – {lesson.scheduled_end?.slice(0, 5)}
+                      <Clock size={12} color="var(--primary)" />
+                      <span style={{ fontWeight: 500 }}>
+                        {formatTime(lesson.scheduled_start)} – {formatTime(lesson.scheduled_end)}
                       </span>
                     </div>
-                    {lesson.actual_start && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: '0.1rem' }}>
-                        Boshlandi: {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  {/* Haqiqiy boshlanish va tugash vaqti */}
+                  <td>
+                    {lesson.actual_start ? (
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--success)' }}>
+                          ▶ {new Date(lesson.actual_start).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        {lesson.actual_end ? (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>
+                            ■ {new Date(lesson.actual_end).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                            {lesson.duration_minutes && (
+                              <span className="text-muted" style={{ fontSize: '0.7rem', marginLeft: '4px' }}>
+                                ({lesson.duration_minutes} daq)
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--warning)' }}>Davom etmoqda...</div>
+                        )}
+                        {lesson.started_late && (
+                          <div style={{ fontSize: '0.68rem', color: 'var(--danger)', marginTop: '0.1rem' }}>⚠ Kech boshlangan</div>
+                        )}
                       </div>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '0.8rem' }}>—</span>
+                    )}
+                  </td>
+                  {/* Xona va Etaj */}
+                  <td>
+                    {(lesson.room || lesson.class_room) ? (
+                      <div>
+                        <div className="flex-center gap-1" style={{ justifyContent: 'flex-start', fontSize: '0.82rem' }}>
+                          <MapPin size={12} color="var(--primary)" />
+                          {lesson.room || lesson.class_room}
+                        </div>
+                        {lesson.class_floor && (
+                          <div className="flex-center gap-1" style={{ justifyContent: 'flex-start', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                            <Building2 size={11} />
+                            {lesson.class_floor}-etaj
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '0.8rem' }}>—</span>
                     )}
                   </td>
                   <td>

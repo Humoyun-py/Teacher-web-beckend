@@ -30,6 +30,16 @@ class SchoolClass(models.Model):
     name = models.CharField(max_length=20, verbose_name='Sinf nomi')  # e.g., "5-A", "9-B"
     grade = models.IntegerField(verbose_name='Sinf raqami')  # e.g., 5, 9
     section = models.CharField(max_length=5, blank=True, verbose_name='Bo\'lim')  # e.g., "A", "B"
+    room = models.CharField(
+        max_length=20, blank=True,
+        verbose_name='Xona raqami',
+        help_text='Masalan: 101, 205, Lab-3',
+    )
+    floor = models.IntegerField(
+        default=1,
+        verbose_name='Etaj',
+        help_text='Nechinchi etajda joylashgan',
+    )
     capacity = models.IntegerField(default=30, verbose_name='Sig\'imi')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

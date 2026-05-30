@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { GraduationCap, Plus, Edit2, Trash2, Search, X } from 'lucide-react';
+import { GraduationCap, Plus, Edit2, Trash2, Search, X, MapPin, Building2 } from 'lucide-react';
 
 export default function Classes() {
   const [classes, setClasses] = useState([]);
@@ -10,7 +10,9 @@ export default function Classes() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', grade: '', section: '', capacity: 30, is_active: true });
+  const [formData, setFormData] = useState({ 
+    name: '', grade: '', section: '', room: '', floor: 1, capacity: 30, is_active: true 
+  });
 
   useEffect(() => {
     fetchClasses();
@@ -35,14 +37,29 @@ export default function Classes() {
         name: cls.name, 
         grade: cls.grade, 
         section: cls.section || '', 
+        room: cls.room || '',
+        floor: cls.floor || 1,
         capacity: cls.capacity || 30, 
         is_active: cls.is_active 
       });
     } else {
       setEditingId(null);
-      setFormData({ name: '', grade: '', section: '', capacity: 30, is_active: true });
+      setFormData({ name: '', grade: '', section: '', room: '', floor: 1, capacity: 30, is_active: true });
     }
     setShowModal(true);
+  };
+
+  // Auto-generate name from grade + section
+  const handleGradeChange = (val) => {
+    const grade = parseInt(val) || '';
+    const name = grade && formData.section ? `${grade}-${formData.section}` : grade ? `${grade}` : '';
+    setFormData({ ...formData, grade, name });
+  };
+
+  const handleSectionChange = (val) => {
+    const section = val.toUpperCase();
+    const name = formData.grade && section ? `${formData.grade}-${section}` : formData.grade ? `${formData.grade}` : '';
+    setFormData({ ...formData, section, name });
   };
 
   const handleSubmit = async (e) => {
@@ -74,7 +91,8 @@ export default function Classes() {
 
   const filteredClasses = classes.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.grade.toString().includes(search)
+    c.grade.toString().includes(search) ||
+    (c.room || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -105,9 +123,11 @@ export default function Classes() {
           <table className="table">
             <thead>
               <tr>
-                <th>Nomi</th>
-                <th>Sinf darajasi</th>
-                <th>Guruh/Harf</th>
+                <th>Sinf nomi</th>
+                <th>Sinf raqami</th>
+                <th>Harf (Bo'lim)</th>
+                <th>Xona raqami</th>
+                <th>Etaj</th>
                 <th>Sig'imi</th>
                 <th>Status</th>
                 <th>O'qituvchilar</th>
@@ -116,15 +136,39 @@ export default function Classes() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Yuklanmoqda...</td></tr>
+                <tr><td colSpan="9" style={{ textAlign: 'center' }}>Yuklanmoqda...</td></tr>
               ) : filteredClasses.length === 0 ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center' }}>Hech narsa topilmadi</td></tr>
+                <tr><td colSpan="9" style={{ textAlign: 'center' }}>Hech narsa topilmadi</td></tr>
               ) : (
                 filteredClasses.map(cls => (
                   <tr key={cls.id}>
                     <td style={{ fontWeight: 600 }}>{cls.name}</td>
                     <td>{cls.grade}</td>
-                    <td>{cls.section || '-'}</td>
+                    <td>
+                      {cls.section ? (
+                        <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem' }}>
+                          {cls.section}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td>
+                      {cls.room ? (
+                        <span className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
+                          <MapPin size={13} color="var(--primary)" />
+                          {cls.room}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {cls.floor ? (
+                        <span className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
+                          <Building2 size={13} color="var(--accent)" />
+                          {cls.floor}-etaj
+                        </span>
+                      ) : '—'}
+                    </td>
                     <td>{cls.capacity}</td>
                     <td>
                       <span className={`badge ${cls.is_active ? 'badge-success' : 'badge-danger'}`}>
@@ -152,7 +196,7 @@ export default function Classes() {
 
       {showModal && (
         <div className="modal-overlay flex-center animate-fade-in">
-          <div className="modal-content glass-panel" style={{ width: '450px', padding: '1.5rem', position: 'relative' }}>
+          <div className="modal-content glass-panel" style={{ width: '520px', padding: '1.5rem', position: 'relative' }}>
             <button 
               className="btn btn-outline" 
               style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.4rem', border: 'none' }}
@@ -160,45 +204,86 @@ export default function Classes() {
             >
               <X size={20} />
             </button>
-            <h2 className="heading-3 mb-4">{editingId ? 'Sinfni Tahrirlash' : 'Yangi Sinf'}</h2>
+            <h2 className="heading-3 mb-4">{editingId ? 'Sinfni Tahrirlash' : 'Yangi Sinf Yaratish'}</h2>
             
             <form onSubmit={handleSubmit} className="flex-col gap-4">
-              <div className="input-group">
-                <label className="input-label">Sinf Nomi</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="Masalan: 10-A Matematika"
-                  required 
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                />
-              </div>
-              
+              {/* Sinf raqami va Harf */}
               <div className="flex-between gap-4">
                 <div className="input-group" style={{ flex: 1 }}>
-                  <label className="input-label">Sinf Darajasi (Grade)</label>
+                  <label className="input-label">Sinf raqami *</label>
                   <input 
                     type="number" 
                     className="input-field" 
                     placeholder="Masalan: 10"
                     required 
+                    min={1}
+                    max={12}
                     value={formData.grade}
-                    onChange={e => setFormData({...formData, grade: parseInt(e.target.value) || ''})}
+                    onChange={e => handleGradeChange(e.target.value)}
                   />
                 </div>
                 <div className="input-group" style={{ flex: 1 }}>
-                  <label className="input-label">Guruh / Harf (ixtiyoriy)</label>
+                  <label className="input-label">Harf (Bo'lim) *</label>
                   <input 
                     type="text" 
                     className="input-field" 
-                    placeholder="A, B, V..."
+                    placeholder="A, B, V, G..."
+                    maxLength={3}
                     value={formData.section}
-                    onChange={e => setFormData({...formData, section: e.target.value})}
+                    onChange={e => handleSectionChange(e.target.value)}
                   />
                 </div>
               </div>
 
+              {/* Auto-generated name display */}
+              <div className="input-group">
+                <label className="input-label">Sinf nomi (avtomatik)</label>
+                <input 
+                  type="text" 
+                  className="input-field" 
+                  placeholder="Sinf raqami va harf kiriting"
+                  required 
+                  value={formData.name}
+                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  style={{ background: 'rgba(99,102,241,0.05)', fontWeight: 600 }}
+                />
+              </div>
+
+              {/* Xona raqami va Etaj */}
+              <div className="flex-between gap-4">
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label className="input-label">
+                    <span className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
+                      <MapPin size={14} /> Xona raqami
+                    </span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    placeholder="Masalan: 101, 205, Lab-3"
+                    value={formData.room}
+                    onChange={e => setFormData({...formData, room: e.target.value})}
+                  />
+                </div>
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label className="input-label">
+                    <span className="flex-center gap-1" style={{ justifyContent: 'flex-start' }}>
+                      <Building2 size={14} /> Etaj
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    className="input-field" 
+                    placeholder="Nechinchi etaj"
+                    min={1}
+                    max={10}
+                    value={formData.floor}
+                    onChange={e => setFormData({...formData, floor: parseInt(e.target.value) || 1})}
+                  />
+                </div>
+              </div>
+
+              {/* O'quvchilar Sig'imi */}
               <div className="input-group">
                 <label className="input-label">O'quvchilar Sig'imi</label>
                 <input 
