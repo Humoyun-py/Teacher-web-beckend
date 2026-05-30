@@ -113,14 +113,38 @@ export default function TeacherDashboard() {
     } finally { setScanning(false); }
   };
 
-  const handleStart = async (id) => {
-    setActionLoading(id + '-start');
+  const handleStartClick = (lessonId) => {
+    if (!isCheckedIn) {
+      alert("Avval Check-in qiling!");
+      return;
+    }
+    const input = document.getElementById(`start-photo-${lessonId}`);
+    if (input) {
+      input.click();
+    }
+  };
+
+  const handleStartWithPhoto = async (e, lessonId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setActionLoading(lessonId + '-start');
     try {
-      await api.startLesson(id);
-      setTodayLessons(prev => prev.map(l => l.id === id ? { ...l, status: 'in_progress', actual_start_time: new Date().toISOString() } : l));
+      // 1. Upload photo proof (mandatory)
+      await api.uploadPhoto(lessonId, file, 'Dars boshlanishi isboti');
+      
+      // 2. Start the lesson
+      await api.startLesson(lessonId);
+      
+      // 3. Update UI state
+      setTodayLessons(prev => prev.map(l => l.id === lessonId ? { ...l, status: 'in_progress', actual_start_time: new Date().toISOString() } : l));
+      await alert('✅ Rasm yuklandi va dars muvaffaqiyatli boshlandi!');
     } catch (err) {
-      await alert('Xatolik: ' + JSON.stringify(err.data || err.message));
-    } finally { setActionLoading(null); }
+      await alert('Darsni boshlashda xatolik: ' + JSON.stringify(err.data || err.message));
+    } finally {
+      setActionLoading(null);
+      e.target.value = '';
+    }
   };
 
   const handleEnd = async (id) => {
@@ -385,8 +409,8 @@ export default function TeacherDashboard() {
                   </div>
                   {/* Actions */}
                   <div className="flex-center gap-2" style={{ marginTop: '0.75rem' }}>
-                    {/* Photo upload */}
-                    {(lesson.status === 'scheduled' || lesson.status === 'in_progress') && (
+                    {/* Photo upload for in_progress dars */}
+                    {lesson.status === 'in_progress' && (
                       <>
                         <input
                           type="file"
@@ -408,16 +432,26 @@ export default function TeacherDashboard() {
                     )}
 
                     {lesson.status === 'scheduled' && (
-                      <button
-                        className="btn btn-primary"
-                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
-                        onClick={() => handleStart(lesson.id)}
-                        disabled={actionLoading === lesson.id + '-start' || !isCheckedIn}
-                        title={!isCheckedIn ? "Avval Check-in qiling" : "Darsni boshlash"}
-                      >
-                        {actionLoading === lesson.id + '-start' ? <Loader size={12} className="spinner" /> : <PlayCircle size={12} />}
-                        Boshlash
-                      </button>
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          id={`start-photo-${lesson.id}`}
+                          onChange={e => handleStartWithPhoto(e, lesson.id)}
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          className="btn btn-primary"
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                          onClick={() => handleStartClick(lesson.id)}
+                          disabled={actionLoading === lesson.id + '-start' || !isCheckedIn}
+                          title={!isCheckedIn ? "Avval Check-in qiling" : "Rasmga olib darsni boshlash"}
+                        >
+                          {actionLoading === lesson.id + '-start' ? <Loader size={12} className="spinner" /> : <PlayCircle size={12} />}
+                          Boshlash (Rasm)
+                        </button>
+                      </>
                     )}
                     {lesson.status === 'in_progress' && (
                       <button

@@ -34,15 +34,35 @@ export default function TeacherSchedule() {
 
   useEffect(() => { loadLessons(); }, [selectedDate]);
 
-  const handleStart = async (id) => {
-    setActionLoading(id + '-start');
+  const handleStartClick = (lessonId) => {
+    const input = document.getElementById(`start-photo-${lessonId}`);
+    if (input) {
+      input.click();
+    }
+  };
+
+  const handleStartWithPhoto = async (e, lessonId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setActionLoading(lessonId + '-start');
     try {
-      await api.startLesson(id);
+      // 1. Upload photo first
+      await api.uploadPhoto(lessonId, file, 'Dars boshlanishi isboti');
+      
+      // 2. Start lesson
+      await api.startLesson(lessonId);
+      
+      // 3. Reload list
       loadLessons();
+      await alert('✅ Dars boshlandi va isbot rasmi yuklandi!');
     } catch (err) {
       const msg = err.data?.error || err.data?.lesson_id?.[0] || JSON.stringify(err.data || err.message);
       await alert('Xatolik: ' + msg);
-    } finally { setActionLoading(null); }
+    } finally {
+      setActionLoading(null);
+      e.target.value = '';
+    }
   };
 
   const handleEnd = async (id) => {
@@ -183,8 +203,8 @@ export default function TeacherSchedule() {
                     {STATUS_LABELS[lesson.status] || lesson.status}
                   </span>
 
-                  {/* Photo upload */}
-                  {(lesson.status === 'scheduled' || lesson.status === 'in_progress') && (
+                  {/* Photo upload for in_progress dars */}
+                  {lesson.status === 'in_progress' && (
                     <div style={{ position: 'relative' }}>
                       <input
                         type="file"
@@ -207,15 +227,25 @@ export default function TeacherSchedule() {
                   )}
 
                   {lesson.status === 'scheduled' && selectedDate === today && (
-                    <button
-                      className="btn btn-primary"
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.88rem' }}
-                      onClick={() => handleStart(lesson.id)}
-                      disabled={actionLoading === lesson.id + '-start'}
-                    >
-                      {actionLoading === lesson.id + '-start' ? <Loader size={14} className="spinner" /> : <PlayCircle size={14} />}
-                      Boshlash
-                    </button>
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        id={`start-photo-${lesson.id}`}
+                        onChange={e => handleStartWithPhoto(e, lesson.id)}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.88rem' }}
+                        onClick={() => handleStartClick(lesson.id)}
+                        disabled={actionLoading === lesson.id + '-start'}
+                      >
+                        {actionLoading === lesson.id + '-start' ? <Loader size={14} className="spinner" /> : <PlayCircle size={14} />}
+                        Boshlash (Rasm)
+                      </button>
+                    </>
                   )}
 
                   {lesson.status === 'in_progress' && (
