@@ -95,13 +95,20 @@ function App() {
     // Darhol ping yuborish (server uyg'onsin)
     pingServer();
 
-    // Har 1 soniyada: token tekshirish + server ping
-    const interval = setInterval(() => {
+    // Har 10 soniyada: token tekshirish
+    const tokenInterval = setInterval(() => {
       checkTokenExpiry();
-      pingServer();
-    }, 1000);
+    }, 10000);
 
-    return () => clearInterval(interval);
+    // Har 60 soniyada: server ping
+    const pingInterval = setInterval(() => {
+      pingServer();
+    }, 60000);
+
+    return () => {
+      clearInterval(tokenInterval);
+      clearInterval(pingInterval);
+    };
   }, []);
 
   useEffect(() => {
