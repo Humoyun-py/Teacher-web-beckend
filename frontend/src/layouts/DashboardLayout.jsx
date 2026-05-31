@@ -26,14 +26,28 @@ export default function DashboardLayout({ role }) {
 
     const parsedUser = JSON.parse(userStr);
 
-    // Role tekshiruvi: admin teacher sahifasida bo'lmasin va aksincha
+    // Role tekshiruvi: admin/it_support/teacher sahifalari himoyasi
+    const isITSupport = parsedUser.role === 'it_support';
     const userIsAdmin = parsedUser.role === 'admin' || parsedUser.is_superuser || parsedUser.is_staff;
-    if (role === 'admin' && !userIsAdmin) {
+
+    if (role === 'it_support' && !isITSupport) {
+      if (userIsAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/teacher', { replace: true });
+      }
+      return;
+    }
+    if (role === 'admin' && !userIsAdmin && !isITSupport) {
       navigate('/teacher', { replace: true });
       return;
     }
-    if (role === 'teacher' && userIsAdmin) {
-      navigate('/admin', { replace: true });
+    if (role === 'teacher' && (userIsAdmin || isITSupport)) {
+      if (isITSupport) {
+        navigate('/it-support', { replace: true });
+      } else {
+        navigate('/admin', { replace: true });
+      }
       return;
     }
 
@@ -55,6 +69,18 @@ export default function DashboardLayout({ role }) {
       })
       .catch(() => {});
   }, []);
+
+  const itSupportMenu = [
+    { name: 'Dashboard',         path: '/it-support',                icon: <LayoutDashboard size={20} /> },
+    { name: "O'qituvchilar",     path: '/it-support/teachers',       icon: <Users size={20} /> },
+    { name: 'Adminlar Boshqaruvi',path: '/it-support/admins',         icon: <Users size={20} /> },
+    { name: 'Darslar & Jadval',  path: '/it-support/lessons',        icon: <BookOpen size={20} /> },
+    { name: 'Davomat & QR',      path: '/it-support/attendance',     icon: <QrCode size={20} /> },
+    { name: 'Rasm Proofs',       path: '/it-support/photos',         icon: <Camera size={20} /> },
+    { name: 'Audit Loglar',      path: '/it-support/audit-logs',     icon: <AlertTriangle size={20} /> },
+    { name: 'Jarima & KPI',      path: '/it-support/salary-kpi',     icon: <DollarSign size={20} /> },
+    { name: 'Tizim Sozlamalari', path: '/it-support/settings',       icon: <Settings size={20} /> },
+  ];
 
   const adminMenu = [
     { name: 'Dashboard',       path: '/admin',              icon: <LayoutDashboard size={20} /> },
@@ -86,7 +112,7 @@ export default function DashboardLayout({ role }) {
     },
   ];
 
-  const menu = role === 'admin' ? adminMenu : teacherMenu;
+  const menu = role === 'it_support' ? itSupportMenu : (role === 'admin' ? adminMenu : teacherMenu);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');

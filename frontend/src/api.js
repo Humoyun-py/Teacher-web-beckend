@@ -301,8 +301,25 @@ export const api = {
   // ══════════════════════════════════════════
   // 📊 ANALYTICS
   // ══════════════════════════════════════════
+  // ══════════════════════════════════════════
+  // 📊 ANALYTICS
+  // ══════════════════════════════════════════
   getAdminDashboard: () => request('/analytics/admin-dashboard/'),
   getTeacherDashboard: () => request('/analytics/teacher-dashboard/'),
+
+  // ══════════════════════════════════════════
+  // ⚙️ IT SUPPORT
+  // ══════════════════════════════════════════
+  getITSupportDashboard: () => request('/auth/it-support/dashboard/'),
+  getITAdmins: () => request('/auth/it-support/admins/'),
+  createITAdmin: (data) => request('/auth/it-support/admins/', { method: 'POST', body: JSON.stringify(data) }),
+  patchITAdmin: (id, data) => request(`/auth/it-support/admins/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteITAdmin: (id) => request(`/auth/it-support/admins/${id}/`, { method: 'DELETE' }),
+  resetITUserPassword: (id, new_password) => request(`/auth/it-support/users/${id}/reset-password/`, { method: 'POST', body: JSON.stringify({ new_password }) }),
+  toggleITUserBlock: (id) => request(`/auth/it-support/users/${id}/block-toggle/`, { method: 'POST', body: JSON.stringify({}) }),
+  getITAuditLogs: (params = '') => request(`/auth/it-support/audit-logs/${params}`),
+  fixITLesson: (data) => request('/auth/it-support/lesson-fix/', { method: 'POST', body: JSON.stringify(data) }),
+  fixITAttendance: (data) => request('/auth/it-support/attendance-fix/', { method: 'POST', body: JSON.stringify(data) }),
 
   // ══════════════════════════════════════════
   // 🔔 NOTIFICATIONS
@@ -324,3 +341,4 @@ export const api = {
     return `${host}${path}`;
   },
 };
+

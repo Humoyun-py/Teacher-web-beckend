@@ -5,7 +5,7 @@ Serializers for accounts app.
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 
-from .models import User
+from .models import User, AuditLog
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -16,13 +16,17 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'role', 'phone', 'avatar', 'is_active',
+            'is_superuser', 'is_staff',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        if instance.is_superuser:
+        # IT Support role saqlanadi, superuser admin bo'lib ko'rsatiladi
+        if instance.role == 'it_support':
+            data['role'] = 'it_support'
+        elif instance.is_superuser:
             data['role'] = 'admin'
         return data
 
@@ -103,3 +107,62 @@ class RefreshTokenSerializer(serializers.Serializer):
     """Serializer for refreshing tokens."""
 
     refresh_token = serializers.CharField()
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Serializer for admin user management by IT Support."""
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'role', 'phone', 'avatar', 'is_active', 'is_staff',
+            'is_superuser', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class AdminCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating admin users by IT Support."""
+
+    password = serializers.CharField(write_only=True, min_length=6)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'phone', 'password',
+        ]
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = User(
+            **validated_data,
+            role='admin',
+            is_staff=True,
+        )
+        user.set_password(password)
+        user.save()
+        return user
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Serializer for audit logs."""
+
+    user_name = serializers.SerializerMethodField()
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'user', 'user_name', 'action', 'action_display',
+            'target_model', 'target_id', 'target_name',
+            'description', 'old_data', 'new_data',
+            'ip_address', 'created_at',
+        ]
+        read_only_fields = fields
+
+    def get_user_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return 'System'

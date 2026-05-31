@@ -28,6 +28,17 @@ import TeacherStats      from './pages/teacher/TeacherStats';
 import MyReplacements    from './pages/teacher/MyReplacements';
 import Notifications2    from './pages/admin/Notifications'; // teacher ham shu componentni ishlatadi
 
+// IT Support pages
+import ITSupportDashboard     from './pages/it_support/ITSupportDashboard';
+import ITTeacherManagement   from './pages/it_support/ITTeacherManagement';
+import ITAdminManagement     from './pages/it_support/ITAdminManagement';
+import ITLessonFix           from './pages/it_support/ITLessonFix';
+import ITAttendanceManagement from './pages/it_support/ITAttendanceManagement';
+import ITPhotoManagement     from './pages/it_support/ITPhotoManagement';
+import ITAuditLogs           from './pages/it_support/ITAuditLogs';
+import ITSalaryKPI           from './pages/it_support/ITSalaryKPI';
+import ITSystemSettings      from './pages/it_support/ITSystemSettings';
+
 function App() {
   const [modal, setModal] = useState(null); // { type: 'alert'|'confirm'|'prompt', message, defaultValue, resolve }
   const [promptValue, setPromptValue] = useState('');
@@ -150,6 +161,19 @@ function App() {
             <Route path="stats"         element={<TeacherStats />} />
             <Route path="replacements"  element={<MyReplacements />} />
             <Route path="notifications" element={<Notifications2 />} />
+          </Route>
+
+          {/* ── IT Support Routes ── */}
+          <Route path="/it-support" element={<DashboardLayout role="it_support" />}>
+            <Route index                element={<ITSupportDashboard />} />
+            <Route path="teachers"      element={<ITTeacherManagement />} />
+            <Route path="admins"        element={<ITAdminManagement />} />
+            <Route path="lessons"       element={<ITLessonFix />} />
+            <Route path="attendance"    element={<ITAttendanceManagement />} />
+            <Route path="photos"        element={<ITPhotoManagement />} />
+            <Route path="audit-logs"    element={<ITAuditLogs />} />
+            <Route path="salary-kpi"    element={<ITSalaryKPI />} />
+            <Route path="settings"      element={<ITSystemSettings />} />
           </Route>
 
           {/* Fallback */}

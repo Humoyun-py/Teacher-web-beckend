@@ -27,8 +27,11 @@ export default function Login() {
       localStorage.setItem('login_time', Date.now().toString());
       
       // Navigate by role
+      const isITSupport = res.user && res.user.role === 'it_support';
       const isAdmin = res.user && (res.user.role === 'admin' || res.user.is_superuser || res.user.is_staff);
-      if (isAdmin) {
+      if (isITSupport) {
+         navigate('/it-support');
+      } else if (isAdmin) {
          navigate('/admin');
       } else {
          navigate('/teacher');
