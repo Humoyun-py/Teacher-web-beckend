@@ -309,7 +309,7 @@ export default function DashboardLayout({ role }) {
 
         {/* Page Content */}
         <div style={{ padding: '1.5rem 1rem 1.5rem 0', flex: 1 }}>
-          <Outlet />
+          {user ? <Outlet /> : null}
         </div>
       </main>
     </div>
