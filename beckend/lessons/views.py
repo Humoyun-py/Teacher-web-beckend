@@ -175,6 +175,16 @@ class LessonViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         user = self.request.user
 
+        status_param = self.request.query_params.get('status')
+        if status_param and ',' in status_param:
+            status_list = [s.strip() for s in status_param.split(',') if s.strip()]
+            queryset = queryset.filter(status__in=status_list)
+            if hasattr(self.request.GET, '_mutable'):
+                m = self.request.GET._mutable
+                self.request.GET._mutable = True
+                self.request.GET.pop('status', None)
+                self.request.GET._mutable = m
+
         if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile') and user.role not in ('admin', 'it_support'):
             from django.db.models import Q
             teacher = user.teacher_profile

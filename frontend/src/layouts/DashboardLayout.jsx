@@ -14,6 +14,9 @@ export default function DashboardLayout({ role }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const normalizeRole = (value) =>
+    String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+
   useEffect(() => {
     // ── Auth Guard ──────────────────────────────────────────────────────
     const token = localStorage.getItem('access_token');
@@ -25,12 +28,14 @@ export default function DashboardLayout({ role }) {
     }
 
     const parsedUser = JSON.parse(userStr);
+    const parsedRole = normalizeRole(parsedUser.role);
+    const layoutRole = normalizeRole(role);
 
     // Role tekshiruvi: admin/it_support/teacher sahifalari himoyasi
-    const isITSupport = parsedUser.role === 'it_support';
-    const userIsAdmin = parsedUser.role === 'admin' || parsedUser.is_superuser || parsedUser.is_staff;
+    const isITSupport = parsedRole === 'it_support';
+    const userIsAdmin = parsedRole === 'admin' || parsedUser.is_superuser || parsedUser.is_staff;
 
-    if (role === 'it_support' && !isITSupport) {
+    if (layoutRole === 'it_support' && !isITSupport) {
       if (userIsAdmin) {
         navigate('/admin', { replace: true });
       } else {
@@ -38,11 +43,11 @@ export default function DashboardLayout({ role }) {
       }
       return;
     }
-    if (role === 'admin' && !userIsAdmin && !isITSupport) {
+    if (layoutRole === 'admin' && !userIsAdmin && !isITSupport) {
       navigate('/teacher', { replace: true });
       return;
     }
-    if (role === 'teacher' && (userIsAdmin || isITSupport)) {
+    if (layoutRole === 'teacher' && (userIsAdmin || isITSupport)) {
       if (isITSupport) {
         navigate('/it-support', { replace: true });
       } else {
@@ -112,7 +117,11 @@ export default function DashboardLayout({ role }) {
     },
   ];
 
-  const menu = role === 'it_support' ? itSupportMenu : (role === 'admin' ? adminMenu : teacherMenu);
+  const currentRole = normalizeRole(role);
+  const menu = currentRole === 'it_support' ? itSupportMenu : (currentRole === 'admin' ? adminMenu : teacherMenu);
+  const notificationsPath = currentRole === 'it_support'
+    ? '/it-support'
+    : (currentRole === 'admin' ? '/admin/notifications' : '/teacher/notifications');
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -267,7 +276,7 @@ export default function DashboardLayout({ role }) {
           <div className="flex-center gap-4">
             {/* Notifications bell */}
             <Link
-              to={role === 'admin' ? '/admin/notifications' : '/teacher/notifications'}
+              to={notificationsPath}
               style={{ background: 'transparent', color: 'var(--text-muted)', position: 'relative', display: 'flex', alignItems: 'center' }}
             >
               <Bell size={20} />

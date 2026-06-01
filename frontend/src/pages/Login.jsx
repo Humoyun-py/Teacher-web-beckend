@@ -10,6 +10,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const normalizeRole = (role) =>
+    String(role || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!username || !password) {
@@ -27,8 +30,9 @@ export default function Login() {
       localStorage.setItem('login_time', Date.now().toString());
       
       // Navigate by role
-      const isITSupport = res.user && res.user.role === 'it_support';
-      const isAdmin = res.user && (res.user.role === 'admin' || res.user.is_superuser || res.user.is_staff);
+      const userRole = normalizeRole(res.user?.role);
+      const isITSupport = userRole === 'it_support';
+      const isAdmin = userRole === 'admin' || res.user?.is_superuser || res.user?.is_staff;
       if (isITSupport) {
          navigate('/it-support');
       } else if (isAdmin) {
