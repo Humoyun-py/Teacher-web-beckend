@@ -234,8 +234,8 @@ export default function ITAttendanceManagement() {
 
       {/* Override Modal */}
       {showOverrideModal && selectedTeacher && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass flex-col" style={{ width: '90%', maxWidth: '440px', padding: '2rem', gap: '1.25rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+          <div className="glass flex-col" style={{ width: '100%', maxWidth: '440px', maxHeight: 'calc(100vh - 2rem)', padding: '2rem', gap: '1.25rem', overflowY: 'auto', margin: 'auto' }}>
             <div className="flex-between">
               <h3 className="heading-3" style={{ margin: 0 }}>Davomatni Override qilish</h3>
               <button onClick={() => setShowOverrideModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
