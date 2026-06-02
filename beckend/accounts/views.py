@@ -5,6 +5,7 @@ Includes IT Support super admin endpoints.
 
 import jwt
 from django.conf import settings
+from django.utils.dateparse import parse_date, parse_time
 from django.utils import timezone
 from rest_framework import status, generics, filters
 from rest_framework.views import APIView
@@ -566,11 +567,28 @@ class AttendanceFixView(APIView):
             except Teacher.DoesNotExist:
                 return Response({'error': 'Teacher topilmadi.'}, status=404)
 
+            target_date = parse_date(date_str or '')
+            if not target_date:
+                return Response({'error': 'Sana formati noto\'g\'ri.'}, status=400)
+
+            check_in_time = None
+            check_in_value = request.data.get('check_in_time')
+            if check_in_value and request.data.get('status') != 'absent':
+                parsed_time = parse_time(check_in_value)
+                if not parsed_time:
+                    return Response({'error': 'Kelish vaqti formati noto\'g\'ri.'}, status=400)
+                check_in_time = timezone.make_aware(
+                    timezone.datetime.combine(target_date, parsed_time),
+                    timezone.get_current_timezone(),
+                )
+            elif request.data.get('status') != 'absent':
+                check_in_time = timezone.now()
+
             att, created = Attendance.objects.update_or_create(
-                teacher=teacher, date=date_str,
+                teacher=teacher, date=target_date,
                 defaults={
                     'status': request.data.get('status', 'present'),
-                    'check_in_time': request.data.get('check_in_time') or timezone.now(),
+                    'check_in_time': check_in_time,
                     'notes': request.data.get('notes', 'IT Support tomonidan qo\'lda yaratildi'),
                 }
             )

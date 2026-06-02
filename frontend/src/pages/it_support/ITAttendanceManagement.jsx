@@ -80,6 +80,7 @@ export default function ITAttendanceManagement() {
     setActionLoading(true);
     try {
       const data = {
+        action: 'create_manual',
         teacher_id: selectedTeacher.id,
         date: date,
         status: overrideForm.status,
