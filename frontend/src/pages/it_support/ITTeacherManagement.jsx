@@ -6,6 +6,28 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 
+const modalOverlayStyle = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(2, 6, 23, 0.75)',
+  backdropFilter: 'blur(8px)',
+  zIndex: 1000,
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+  padding: '2rem 1rem',
+  overflowY: 'auto',
+};
+
+const modalCardStyle = {
+  width: '100%',
+  padding: '2rem',
+  gap: '1.25rem',
+  maxHeight: 'calc(100dvh - 4rem)',
+  overflowY: 'auto',
+  margin: 'auto 0',
+};
+
 export default function ITTeacherManagement() {
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -301,8 +323,8 @@ export default function ITTeacherManagement() {
 
       {/* CREATE / EDIT Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass flex-col" style={{ width: '90%', maxWidth: '450px', padding: '2rem', gap: '1.25rem', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={modalOverlayStyle}>
+          <div className="glass flex-col" style={{ ...modalCardStyle, maxWidth: '450px' }}>
             <div className="flex-between">
               <h3 className="heading-3" style={{ margin: 0 }}>{editingTeacher ? "O'qituvchini tahrirlash" : "Yangi o'qituvchi qo'shish"}</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
@@ -352,8 +374,8 @@ export default function ITTeacherManagement() {
 
       {/* Assign Modal */}
       {showAssignModal && selectedTeacher && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass flex-col" style={{ width: '90%', maxWidth: '500px', padding: '2rem', gap: '1.25rem', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={modalOverlayStyle}>
+          <div className="glass flex-col" style={{ ...modalCardStyle, maxWidth: '500px' }}>
             <div className="flex-between">
               <h3 className="heading-3" style={{ margin: 0 }}>Fan va Sinflarni biriktirish</h3>
               <button onClick={() => setShowAssignModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
@@ -412,8 +434,8 @@ export default function ITTeacherManagement() {
 
       {/* Password Reset Modal */}
       {showPassModal && selectedTeacher && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass flex-col" style={{ width: '90%', maxWidth: '400px', padding: '2rem', gap: '1.25rem' }}>
+        <div style={modalOverlayStyle}>
+          <div className="glass flex-col" style={{ ...modalCardStyle, maxWidth: '400px' }}>
             <div className="flex-between">
               <h3 className="heading-3" style={{ margin: 0 }}>O'qituvchi parolini yangilash</h3>
               <button onClick={() => setShowPassModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
@@ -435,8 +457,8 @@ export default function ITTeacherManagement() {
 
       {/* Salary Modal */}
       {showSalaryModal && selectedTeacher && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(2, 6, 23, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass flex-col" style={{ width: '90%', maxWidth: '650px', maxHeight: '85vh', padding: '2rem', gap: '1.25rem', overflowY: 'auto' }}>
+        <div style={modalOverlayStyle}>
+          <div className="glass flex-col" style={{ ...modalCardStyle, maxWidth: '650px' }}>
             <div className="flex-between">
               <h3 className="heading-3" style={{ margin: 0 }}>💰 Maosh Hisoboti</h3>
               <button onClick={() => setShowSalaryModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
