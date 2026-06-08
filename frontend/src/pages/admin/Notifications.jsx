@@ -25,12 +25,21 @@ export default function Notifications() {
 
   const handleMarkAll = async () => {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    // IT support mock count handle
+    if (!unreadIds.length && unread > 0) {
+      setUnread(0);
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      window.dispatchEvent(new Event('notificationsUpdated'));
+      return;
+    }
     if (!unreadIds.length) return;
     setMarking(true);
     try {
       await api.markAsRead(unreadIds);
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       setUnread(0);
+      // Global event dispatch so DashboardLayout can update its unread badge
+      window.dispatchEvent(new Event('notificationsUpdated'));
     } catch (err) {
       alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally { setMarking(false); }

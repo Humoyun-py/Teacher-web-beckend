@@ -23,10 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # IT Support role saqlanadi, superuser admin bo'lib ko'rsatiladi
-        if instance.role == 'it_support':
-            data['role'] = 'it_support'
-        elif instance.is_superuser:
+        # superuser admin bo'lib ko'rsatiladi
+        if instance.is_superuser:
             data['role'] = 'admin'
         return data
 

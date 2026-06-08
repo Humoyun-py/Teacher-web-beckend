@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, QrCode, Camera,
   Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library,
-  DollarSign, ArrowRightLeft
+  DollarSign, ArrowRightLeft, Shield
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -13,47 +13,94 @@ export default function DashboardLayout({ role }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+  const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [commandSearch, setCommandSearch] = useState('');
 
   const normalizeRole = (value) =>
     String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+  const getSafeUserRole = () => {
+    try {
+      const u = localStorage.getItem('user');
+      if (!u || u === 'undefined') return '';
+      return JSON.parse(u).role || '';
+    } catch { return ''; }
+  };
+
+  const userIsITSupport = normalizeRole(user?.role || getSafeUserRole()) === 'it_support';
+
+  useEffect(() => {
+    // Ctrl+K listener
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+
+    // Notifications update listener
+    const handleNotifUpdate = () => {
+      api.getUnreadCount()
+        .then(res => setUnreadCount(res.count || res.unread_count || 0))
+        .catch(() => { });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('notificationsUpdated', handleNotifUpdate);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('notificationsUpdated', handleNotifUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     // ── Auth Guard ──────────────────────────────────────────────────────
     const token = localStorage.getItem('access_token');
     const userStr = localStorage.getItem('user');
 
-    if (!token || !userStr) {
+    if (!token || !userStr || userStr === 'undefined' || userStr === 'null') {
+      localStorage.clear();
       navigate('/', { replace: true });
       return;
     }
 
-    const parsedUser = JSON.parse(userStr);
+    let parsedUser = null;
+    try {
+      parsedUser = JSON.parse(userStr);
+    } catch (e) {
+      console.error("User data parse error", e);
+      localStorage.clear();
+      navigate('/', { replace: true });
+      return;
+    }
+
+    if (!parsedUser) {
+      navigate('/', { replace: true });
+      return;
+    }
+
     const parsedRole = normalizeRole(parsedUser.role);
     const layoutRole = normalizeRole(role);
 
-    // Role tekshiruvi: admin/it_support/teacher sahifalari himoyasi
-    const isITSupport = parsedRole === 'it_support';
+    // Role tekshiruvi: Qat'iy ajratish
+    const userIsITSupport = parsedRole === 'it_support' || parsedRole === 'superadmin';
     const userIsAdmin = parsedRole === 'admin' || parsedUser.is_superuser || parsedUser.is_staff;
 
-    if (layoutRole === 'it_support' && !isITSupport) {
-      if (userIsAdmin) {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/teacher', { replace: true });
-      }
+    // IT Support sahifasiga faqat IT Support kiradi
+    if (layoutRole === 'it_support' && !userIsITSupport) {
+      if (userIsAdmin) navigate('/admin', { replace: true });
+      else navigate('/teacher', { replace: true });
       return;
     }
-    if (layoutRole === 'admin' && !userIsAdmin && !isITSupport) {
+
+    // Admin sahifasiga Admin yoki IT Support kirsa bo'ladi
+    if (layoutRole === 'admin' && !userIsAdmin && !userIsITSupport) {
       navigate('/teacher', { replace: true });
       return;
     }
-    if (layoutRole === 'teacher' && (userIsAdmin || isITSupport)) {
-      if (isITSupport) {
-        navigate('/it-support', { replace: true });
-      } else {
-        navigate('/admin', { replace: true });
-      }
-      return;
+
+    if (layoutRole === 'teacher' && (userIsAdmin || userIsITSupport)) {
+      // O'qituvchi qismi ochiq qolishi mumkin (nazorat uchun)
     }
 
     setUser(parsedUser);
@@ -61,7 +108,7 @@ export default function DashboardLayout({ role }) {
     // Unread notifications soni
     api.getUnreadCount()
       .then(res => setUnreadCount(res.count || res.unread_count || 0))
-      .catch(() => {});
+      .catch(() => { });
 
     // Profile ni yangilash
     api.getProfile()
@@ -72,56 +119,77 @@ export default function DashboardLayout({ role }) {
           setUser(updated);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
-  const itSupportMenu = [
-    { name: 'Dashboard',         path: '/it-support',                icon: <LayoutDashboard size={20} /> },
-    { name: "O'qituvchilar",     path: '/it-support/teachers',       icon: <Users size={20} /> },
-    { name: 'Adminlar Boshqaruvi',path: '/it-support/admins',         icon: <Users size={20} /> },
-    { name: 'Darslar & Jadval',  path: '/it-support/lessons',        icon: <BookOpen size={20} /> },
-    { name: 'Davomat & QR',      path: '/it-support/attendance',     icon: <QrCode size={20} /> },
-    { name: 'Rasm Proofs',       path: '/it-support/photos',         icon: <Camera size={20} /> },
-    { name: 'Audit Loglar',      path: '/it-support/audit-logs',     icon: <AlertTriangle size={20} /> },
-    { name: 'Jarima & KPI',      path: '/it-support/salary-kpi',     icon: <DollarSign size={20} /> },
-    { name: 'Tizim Sozlamalari', path: '/it-support/settings',       icon: <Settings size={20} /> },
-  ];
-
   const adminMenu = [
-    { name: 'Dashboard',       path: '/admin',              icon: <LayoutDashboard size={20} /> },
-    { name: "O'qituvchilar",   path: '/admin/teachers',     icon: <Users size={20} /> },
-    { name: 'Fanlar',          path: '/admin/subjects',     icon: <Library size={20} /> },
-    { name: 'Sinflar',         path: '/admin/classes',      icon: <GraduationCap size={20} /> },
-    { name: 'Darslar',         path: '/admin/lessons',      icon: <BookOpen size={20} /> },
-    { name: 'Dars Jadvali',    path: '/admin/schedule',     icon: <Calendar size={20} /> },
-    { name: 'QR Nazorat',      path: '/admin/qr-checkin',   icon: <QrCode size={20} /> },
-    { name: 'Rasm Tekshiruv',  path: '/admin/video-review', icon: <Camera size={20} /> },
-    { name: 'Oylik Hisoblash',  path: '/admin/salary-calc',  icon: <DollarSign size={20} /> },
-    { name: "O'rinbosarlar",   path: '/admin/replacements', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
+    { name: "O'qituvchilar", path: '/admin/teachers', icon: <Users size={20} /> },
+    { name: 'Fanlar', path: '/admin/subjects', icon: <Library size={20} /> },
+    { name: 'Sinflar', path: '/admin/classes', icon: <GraduationCap size={20} /> },
+    { name: 'Darslar', path: '/admin/lessons', icon: <BookOpen size={20} /> },
+    { name: 'Dars Jadvali', path: '/admin/schedule', icon: <Calendar size={20} /> },
+    { name: 'QR Nazorat', path: '/admin/qr-checkin', icon: <QrCode size={20} /> },
+    { name: 'Rasm Tekshiruv', path: '/admin/video-review', icon: <Camera size={20} /> },
+    { name: 'Oylik Hisoblash', path: '/admin/salary-calc', icon: <DollarSign size={20} /> },
+    { name: "O'rinbosarlar", path: '/admin/replacements', icon: <ArrowRightLeft size={20} /> },
     {
       name: 'Bildirishnomalar', path: '/admin/notifications', icon: <Bell size={20} />,
       badge: unreadCount > 0 ? unreadCount : null,
     },
-    { name: 'Sozlamalar',      path: '/admin/settings',     icon: <Settings size={20} /> },
+    { name: 'Sozlamalar', path: '/admin/settings', icon: <Settings size={20} /> },
   ];
 
   const teacherMenu = [
-    { name: 'Dashboard',       path: '/teacher',            icon: <LayoutDashboard size={20} /> },
-    { name: 'Mening Darslarim',path: '/teacher/schedule',   icon: <Calendar size={20} /> },
-    { name: 'QR Skaner',       path: '/teacher/qr-scan',    icon: <QrCode size={20} /> },
-    { name: 'Statistika',      path: '/teacher/stats',      icon: <BarChart3 size={20} /> },
-    { name: "O'rinbosarlar",   path: '/teacher/replacements', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Dashboard', path: '/teacher', icon: <LayoutDashboard size={20} /> },
+    { name: 'Mening Darslarim', path: '/teacher/schedule', icon: <Calendar size={20} /> },
+    { name: 'QR Skaner', path: '/teacher/qr-scan', icon: <QrCode size={20} /> },
+    { name: 'Statistika', path: '/teacher/stats', icon: <BarChart3 size={20} /> },
+    { name: "O'rinbosarlar", path: '/teacher/replacements', icon: <ArrowRightLeft size={20} /> },
     {
       name: 'Bildirishnomalar', path: '/teacher/notifications', icon: <Bell size={20} />,
       badge: unreadCount > 0 ? unreadCount : null,
     },
   ];
 
-  const currentRole = normalizeRole(role);
-  const menu = currentRole === 'it_support' ? itSupportMenu : (currentRole === 'admin' ? adminMenu : teacherMenu);
-  const notificationsPath = currentRole === 'it_support'
-    ? '/it-support'
-    : (currentRole === 'admin' ? '/admin/notifications' : '/teacher/notifications');
+  const itSupportMenu = [
+    // ─ IT Support Maxsus ─
+    { name: 'Control Center', path: '/it-support', icon: <Shield size={20} /> },
+    { name: 'Teacher Controls', path: '/it-support/teacher-controls', icon: <Users size={20} /> },
+    { name: 'O\'qituvchilar', path: '/it-support/teachers', icon: <Users size={20} /> },
+    { name: 'Darslar Monitori', path: '/it-support/lessons', icon: <BookOpen size={20} /> },
+    { name: 'Davomat Boshqaruvi', path: '/it-support/attendance', icon: <Calendar size={20} /> },
+    { name: 'Xabar Markazi', path: '/it-support/notifications', icon: <Bell size={20} /> },
+    { name: 'CCTV Monitoring', path: '/it-support/cctv', icon: <Camera size={20} /> },
+    { name: 'Audit Loglar', path: '/it-support/audit-logs', icon: <BarChart3 size={20} /> },
+    { name: 'Tizimni Tiklash', path: '/it-support/restore', icon: <AlertTriangle size={20} /> },
+    { name: 'Admin Boshqaruvi', path: '/it-support/admins', icon: <Shield size={20} /> },
+    // ─ Admin Modullar ─
+    { name: 'Fanlar', path: '/admin/subjects', icon: <BookOpen size={20} /> },
+    { name: 'Sinflar', path: '/admin/classes', icon: <GraduationCap size={20} /> },
+    { name: 'Dars Jadvali', path: '/admin/schedule', icon: <Calendar size={20} /> },
+    { name: 'QR Nazorat', path: '/admin/qr-checkin', icon: <QrCode size={20} /> },
+    { name: 'Video Tekshiruv', path: '/admin/video-review', icon: <Camera size={20} /> },
+    { name: 'Oylik & KPI', path: '/admin/salary-calc', icon: <DollarSign size={20} /> },
+    { name: 'O\'rinbosarlar', path: '/admin/replacements', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Sozlamalar', path: '/admin/settings', icon: <Settings size={20} /> },
+  ];
+
+  // Menyuni layout roliga emas, FOYDALANUVCHINING HAQIQIY ROLIGA qarab tanlash
+  // (IT Support /admin/... sahifalarida ham o'z menyusini ko'radi)
+  const getSafeRole = () => {
+    try {
+      const u = localStorage.getItem('user');
+      if (!u || u === 'undefined' || u === 'null') return normalizeRole(role);
+      return normalizeRole(JSON.parse(u).role || role);
+    } catch { return normalizeRole(role); }
+  };
+  const actualUserRole = getSafeRole();
+  let menu = teacherMenu;
+  if (actualUserRole === 'it_support' || actualUserRole === 'superadmin') menu = itSupportMenu;
+  else if (actualUserRole === 'admin') menu = adminMenu;
+
+  const notificationsPath = actualUserRole === 'it_support' ? '/admin/notifications' : (actualUserRole === 'admin' ? '/admin/notifications' : '/teacher/notifications');
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -132,6 +200,69 @@ export default function DashboardLayout({ role }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-darker)' }}>
+      {/* Super Admin / IT Support Neural Overlay */}
+      {userIsITSupport && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: '4px',
+          background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #6366f1)',
+          zIndex: 9999, backgroundSize: '200% 100%', animation: 'gradient-move 3s linear infinite',
+          pointerEvents: 'none'
+        }}>
+          <style>{`
+             @keyframes gradient-move { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } }
+             .commander-mode { box-shadow: inset 0 0 60px rgba(99, 102, 241, 0.15); border: 2px solid rgba(99, 102, 241, 0.2); pointer-events: none; position: fixed; inset: 0; z-index: 9998; border-radius: 0; }
+           `}</style>
+        </div>
+      )}
+      {userIsITSupport && <div className="commander-mode" />}
+
+      {/* Command Palette (Ctrl+K) */}
+      {isCommandPaletteOpen && (
+        <div className="modal-overlay flex-center" style={{ zIndex: 10000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }} onClick={() => setCommandPaletteOpen(false)}>
+          <div
+            className="glass-panel w-full max-w-2xl overflow-hidden p-0 animate-scale-up"
+            style={{ border: '1px solid var(--primary)', borderRadius: '24px', boxShadow: '0 0 40px rgba(99,102,241,0.2)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-surface flex items-center gap-4">
+              <Shield className="text-primary" size={24} />
+              <input
+                autoFocus
+                className="flex-1 bg-transparent border-none text-xl outline-none text-main"
+                placeholder="Super Command kiriting... (ESC yopadi)"
+                value={commandSearch}
+                onChange={e => setCommandSearch(e.target.value)}
+              />
+              <div className="text-xs text-muted border border-surface px-2 py-1 rounded">ESC</div>
+            </div>
+            <div className="p-4 flex-col gap-1 max-h-96 overflow-y-auto">
+              {[
+                { n: 'System Restore Center', p: '/it-support/restore', i: <AlertTriangle size={18} />, d: 'Darslar va davomatni tiklash' },
+                { n: 'Neural Audit Logs', p: '/it-support/audit-logs', i: <BarChart3 size={18} />, d: 'Tizim harakatlari tarixi' },
+                { n: 'Global Admin Controls', p: '/it-support/admins', i: <Shield size={18} />, d: 'Adminlarni boshqarish' },
+                { n: 'Teacher Impersonation', p: '/it-support/teacher-controls', i: <Users size={18} />, d: 'O\'qituvchi nomidan ishlash' },
+                { n: 'School Management Hub', p: '/it-support', i: <LayoutDashboard size={18} />, d: 'Global Dashboard' },
+                { n: 'All Teachers List', p: '/admin/teachers', i: <Users size={18} />, d: 'O\'qituvchilar bazasi' },
+                { n: 'Salary & KPI Calc', p: '/admin/salary-calc', i: <DollarSign size={18} />, d: 'Oylik hisoboti' }
+              ].filter(it => it.n.toLowerCase().includes(commandSearch.toLowerCase())).map((it, idx) => (
+                <button
+                  key={idx}
+                  className="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/10 transition-all text-left w-full border-none cursor-pointer"
+                  onClick={() => { navigate(it.p); setCommandPaletteOpen(false); }}
+                >
+                  <div style={{ padding: '0.6rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)' }}>{it.i}</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-main">{it.n}</div>
+                    <div className="text-xs text-muted">{it.d}</div>
+                  </div>
+                  <ChevronRight size={16} className="text-muted" />
+                </button>
+              ))}
+            </div>
+            <div className="p-3 bg-white/5 text-[10px] text-muted text-center uppercase tracking-widest font-bold">Commander Interface v3.0 // Neural Intelligence Activated</div>
+          </div>
+        </div>
+      )}
 
       {/* ── Sidebar ── */}
       <aside

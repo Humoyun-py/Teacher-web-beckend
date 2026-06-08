@@ -185,7 +185,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                 self.request.GET.pop('status', None)
                 self.request.GET._mutable = m
 
-        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile') and user.role not in ('admin', 'it_support'):
+        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile') and user.role != 'admin':
             from django.db.models import Q
             teacher = user.teacher_profile
             queryset = queryset.filter(
@@ -411,7 +411,7 @@ class LessonViewSet(viewsets.ModelViewSet):
         replacement = Teacher.objects.get(id=replacement_id) if replacement_id else None
 
         user = request.user
-        is_admin_user = (getattr(user, 'role', None) in ('admin', 'it_support') or user.is_superuser or user.is_staff)
+        is_admin_user = (getattr(user, 'role', None) == 'admin' or user.is_superuser or user.is_staff)
         
         # Admin action
         if is_admin_user:
@@ -525,7 +525,7 @@ class LessonViewSet(viewsets.ModelViewSet):
         ).order_by('-date')
 
         user = request.user
-        is_admin_user = (getattr(user, 'role', None) in ('admin', 'it_support') or user.is_superuser or user.is_staff)
+        is_admin_user = (getattr(user, 'role', None) == 'admin' or user.is_superuser or user.is_staff)
         if not is_admin_user and getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile'):
             from django.db.models import Q
             teacher = user.teacher_profile

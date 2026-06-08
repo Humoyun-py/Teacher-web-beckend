@@ -53,7 +53,7 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         user = self.request.user
 
-        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile') and user.role not in ('admin', 'it_support'):
+        if getattr(user, 'role', None) == 'teacher' and hasattr(user, 'teacher_profile') and user.role != 'admin':
             queryset = queryset.filter(teacher=user.teacher_profile)
 
         return queryset

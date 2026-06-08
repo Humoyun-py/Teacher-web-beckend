@@ -6,12 +6,12 @@ export default function Classes() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  
+
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ 
-    name: '', grade: '', section: '', room: '', floor: 1, capacity: 30, is_active: true 
+  const [formData, setFormData] = useState({
+    name: '', grade: '', section: '', room: '', floor: 1, capacity: 30, is_active: true
   });
 
   useEffect(() => {
@@ -33,14 +33,14 @@ export default function Classes() {
   const handleOpenModal = (cls = null) => {
     if (cls) {
       setEditingId(cls.id);
-      setFormData({ 
-        name: cls.name, 
-        grade: cls.grade, 
-        section: cls.section || '', 
+      setFormData({
+        name: cls.name,
+        grade: cls.grade,
+        section: cls.section || '',
         room: cls.room || '',
         floor: cls.floor || 1,
-        capacity: cls.capacity || 30, 
-        is_active: cls.is_active 
+        capacity: cls.capacity || 30,
+        is_active: cls.is_active
       });
     } else {
       setEditingId(null);
@@ -89,7 +89,7 @@ export default function Classes() {
     }
   };
 
-  const filteredClasses = classes.filter(c => 
+  const filteredClasses = classes.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.grade.toString().includes(search) ||
     (c.room || '').toLowerCase().includes(search.toLowerCase())
@@ -108,10 +108,10 @@ export default function Classes() {
         <div className="input-group" style={{ maxWidth: '300px' }}>
           <div style={{ position: 'relative' }}>
             <Search size={18} className="text-muted" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="Qidirish..." 
+            <input
+              type="text"
+              className="input-field"
+              placeholder="Qidirish..."
               style={{ paddingLeft: '2.75rem' }}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -195,27 +195,64 @@ export default function Classes() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay flex-center animate-fade-in">
-          <div className="modal-content glass-panel" style={{ width: '520px', padding: '1.5rem', position: 'relative' }}>
-            <button 
-              className="btn btn-outline" 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.4rem', border: 'none' }}
+        <div
+          className="modal-overlay"
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'stretch',
+            zIndex: 1000,
+            background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(10px)',
+            animation: 'fadeIn 0.3s ease'
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '480px',
+              height: '100%',
+              borderRadius: '24px 0 0 24px',
+              padding: '2.5rem',
+              position: 'relative',
+              boxShadow: '-10px 0 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              background: 'var(--bg-darker)',
+              border: 'none',
+              borderLeft: '1px solid var(--surface-border)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <style>{`
+              @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+              }
+              @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            `}</style>
+
+            <button
+              className="btn btn-ghost"
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', padding: '0.5rem' }}
               onClick={() => setShowModal(false)}
             >
-              <X size={20} />
+              <X size={24} />
             </button>
-            <h2 className="heading-3 mb-4">{editingId ? 'Sinfni Tahrirlash' : 'Yangi Sinf Yaratish'}</h2>
-            
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '2rem' }}>{editingId ? 'Sinfni Tahrirlash' : 'Yangi Sinf Yaratish'}</h2>
+
             <form onSubmit={handleSubmit} className="flex-col gap-4">
               {/* Sinf raqami va Harf */}
               <div className="flex-between gap-4">
                 <div className="input-group" style={{ flex: 1 }}>
                   <label className="input-label">Sinf raqami *</label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
+                  <input
+                    type="number"
+                    className="input-field"
                     placeholder="Masalan: 10"
-                    required 
+                    required
                     min={1}
                     max={12}
                     value={formData.grade}
@@ -224,9 +261,9 @@ export default function Classes() {
                 </div>
                 <div className="input-group" style={{ flex: 1 }}>
                   <label className="input-label">Harf (Bo'lim) *</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
+                  <input
+                    type="text"
+                    className="input-field"
                     placeholder="A, B, V, G..."
                     maxLength={3}
                     value={formData.section}
@@ -238,13 +275,13 @@ export default function Classes() {
               {/* Auto-generated name display */}
               <div className="input-group">
                 <label className="input-label">Sinf nomi (avtomatik)</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
+                <input
+                  type="text"
+                  className="input-field"
                   placeholder="Sinf raqami va harf kiriting"
-                  required 
+                  required
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   style={{ background: 'rgba(99,102,241,0.05)', fontWeight: 600 }}
                 />
               </div>
@@ -257,12 +294,12 @@ export default function Classes() {
                       <MapPin size={14} /> Xona raqami
                     </span>
                   </label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
+                  <input
+                    type="text"
+                    className="input-field"
                     placeholder="Masalan: 101, 205, Lab-3"
                     value={formData.room}
-                    onChange={e => setFormData({...formData, room: e.target.value})}
+                    onChange={e => setFormData({ ...formData, room: e.target.value })}
                   />
                 </div>
                 <div className="input-group" style={{ flex: 1 }}>
@@ -271,14 +308,14 @@ export default function Classes() {
                       <Building2 size={14} /> Etaj
                     </span>
                   </label>
-                  <input 
-                    type="number" 
-                    className="input-field" 
+                  <input
+                    type="number"
+                    className="input-field"
                     placeholder="Nechinchi etaj"
                     min={1}
                     max={10}
                     value={formData.floor}
-                    onChange={e => setFormData({...formData, floor: parseInt(e.target.value) || 1})}
+                    onChange={e => setFormData({ ...formData, floor: parseInt(e.target.value) || 1 })}
                   />
                 </div>
               </div>
@@ -286,27 +323,27 @@ export default function Classes() {
               {/* O'quvchilar Sig'imi */}
               <div className="input-group">
                 <label className="input-label">O'quvchilar Sig'imi</label>
-                <input 
-                  type="number" 
-                  className="input-field" 
+                <input
+                  type="number"
+                  className="input-field"
                   value={formData.capacity}
-                  onChange={e => setFormData({...formData, capacity: parseInt(e.target.value) || 0})}
+                  onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })}
                 />
               </div>
-              
+
               <div className="flex-center gap-2" style={{ justifyContent: 'flex-start' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="isActiveClass"
                   checked={formData.is_active}
-                  onChange={e => setFormData({...formData, is_active: e.target.checked})}
+                  onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
                 />
                 <label htmlFor="isActiveClass" style={{ cursor: 'pointer' }}>Faol holatda</label>
               </div>
-              
-              <div className="flex-center gap-2 mt-2">
-                <button type="button" className="btn btn-outline flex-1" onClick={() => setShowModal(false)}>Bekor qilish</button>
-                <button type="submit" className="btn btn-primary flex-1">Saqlash</button>
+
+              <div style={{ marginTop: 'auto', display: 'flex', gap: '1rem', paddingTop: '1.5rem' }}>
+                <button type="button" className="btn btn-outline" style={{ flex: 1, height: '3.5rem', borderRadius: '12px' }} onClick={() => setShowModal(false)}>Bekor qilish</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, height: '3.5rem', borderRadius: '12px' }}>Saqlash</button>
               </div>
             </form>
           </div>

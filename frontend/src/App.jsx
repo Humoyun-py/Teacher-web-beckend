@@ -7,37 +7,41 @@ import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 
 // Admin pages
-import AdminDashboard   from './pages/admin/AdminDashboard';
-import TeachersList     from './pages/admin/TeachersList';
-import Lessons          from './pages/admin/Lessons';
-import Schedule         from './pages/admin/Schedule';
-import QRCheckinData    from './pages/admin/QRCheckinData';
-import VideoReviewList  from './pages/admin/VideoReviewList';
-import Notifications    from './pages/admin/Notifications';
-import Settings         from './pages/admin/Settings';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import TeachersList from './pages/admin/TeachersList';
+import Lessons from './pages/admin/Lessons';
+import Schedule from './pages/admin/Schedule';
+import QRCheckinData from './pages/admin/QRCheckinData';
+import VideoReviewList from './pages/admin/VideoReviewList';
+import Notifications from './pages/admin/Notifications';
+import Settings from './pages/admin/Settings';
 
-import Subjects         from './pages/admin/Subjects';
-import Classes          from './pages/admin/Classes';
-import SalaryCalc       from './pages/admin/SalaryCalc';
-import Replacements     from './pages/admin/Replacements';
+import Subjects from './pages/admin/Subjects';
+import Classes from './pages/admin/Classes';
+import SalaryCalc from './pages/admin/SalaryCalc';
+import Replacements from './pages/admin/Replacements';
 
 // Teacher pages
-import TeacherDashboard  from './pages/teacher/TeacherDashboard';
-import TeacherSchedule   from './pages/teacher/TeacherSchedule';
-import TeacherStats      from './pages/teacher/TeacherStats';
-import MyReplacements    from './pages/teacher/MyReplacements';
-import Notifications2    from './pages/admin/Notifications'; // teacher ham shu componentni ishlatadi
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherSchedule from './pages/teacher/TeacherSchedule';
+import TeacherStats from './pages/teacher/TeacherStats';
+import MyReplacements from './pages/teacher/MyReplacements';
+import Notifications2 from './pages/admin/Notifications';
 
 // IT Support pages
-import ITSupportDashboard     from './pages/it_support/ITSupportDashboard';
-import ITTeacherManagement   from './pages/it_support/ITTeacherManagement';
-import ITAdminManagement     from './pages/it_support/ITAdminManagement';
-import ITLessonFix           from './pages/it_support/ITLessonFix';
-import ITAttendanceManagement from './pages/it_support/ITAttendanceManagement';
-import ITPhotoManagement     from './pages/it_support/ITPhotoManagement';
-import ITAuditLogs           from './pages/it_support/ITAuditLogs';
-import ITSalaryKPI           from './pages/it_support/ITSalaryKPI';
-import ITSystemSettings      from './pages/it_support/ITSystemSettings';
+import ITDashboard from './pages/it-support/ITDashboard';
+import TeacherControls from './pages/it-support/TeacherControls';
+import TeacherManagement from './pages/it-support/TeacherManagement';
+import LessonManagement from './pages/it-support/LessonManagement';
+import AttendanceManagement from './pages/it-support/AttendanceManagement';
+import NotificationCenter from './pages/it-support/NotificationCenter';
+import SystemRestore from './pages/it-support/SystemRestore';
+import AuditLogs from './pages/it-support/AuditLogs';
+import AdminManagement from './pages/it-support/AdminManagement';
+import CCTVMonitoring from './pages/it-support/CCTVMonitoring';
+
+
+
 
 function App() {
   const [modal, setModal] = useState(null); // { type: 'alert'|'confirm'|'prompt', message, defaultValue, resolve }
@@ -139,42 +143,47 @@ function App() {
 
           {/* ── Admin Routes ── */}
           <Route path="/admin" element={<DashboardLayout role="admin" />}>
-            <Route index            element={<AdminDashboard />} />
-            <Route path="teachers"      element={<TeachersList />} />
-            <Route path="subjects"      element={<Subjects />} />
-            <Route path="classes"       element={<Classes />} />
-            <Route path="lessons"       element={<Lessons />} />
-            <Route path="schedule"      element={<Schedule />} />
-            <Route path="qr-checkin"    element={<QRCheckinData />} />
-            <Route path="video-review"  element={<VideoReviewList />} />
-            <Route path="salary-calc"   element={<SalaryCalc />} />
-            <Route path="replacements"  element={<Replacements />} />
+            <Route index element={<AdminDashboard />} />
+            <Route path="teachers" element={<TeachersList />} />
+            <Route path="subjects" element={<Subjects />} />
+            <Route path="classes" element={<Classes />} />
+            <Route path="lessons" element={<Lessons />} />
+            <Route path="schedule" element={<Schedule />} />
+            <Route path="qr-checkin" element={<QRCheckinData />} />
+            <Route path="video-review" element={<VideoReviewList />} />
+            <Route path="salary-calc" element={<SalaryCalc />} />
+            <Route path="replacements" element={<Replacements />} />
             <Route path="notifications" element={<Notifications />} />
-            <Route path="settings"      element={<Settings />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           {/* ── Teacher Routes ── */}
           <Route path="/teacher" element={<DashboardLayout role="teacher" />}>
-            <Route index                element={<TeacherDashboard />} />
-            <Route path="schedule"      element={<TeacherSchedule />} />
-            <Route path="qr-scan"       element={<TeacherDashboard />} />
-            <Route path="stats"         element={<TeacherStats />} />
-            <Route path="replacements"  element={<MyReplacements />} />
+            <Route index element={<TeacherDashboard />} />
+            <Route path="schedule" element={<TeacherSchedule />} />
+            <Route path="qr-scan" element={<TeacherDashboard />} />
+            <Route path="stats" element={<TeacherStats />} />
+            <Route path="replacements" element={<MyReplacements />} />
             <Route path="notifications" element={<Notifications2 />} />
           </Route>
 
           {/* ── IT Support Routes ── */}
           <Route path="/it-support" element={<DashboardLayout role="it_support" />}>
-            <Route index                element={<ITSupportDashboard />} />
-            <Route path="teachers"      element={<ITTeacherManagement />} />
-            <Route path="admins"        element={<ITAdminManagement />} />
-            <Route path="lessons"       element={<ITLessonFix />} />
-            <Route path="attendance"    element={<ITAttendanceManagement />} />
-            <Route path="photos"        element={<ITPhotoManagement />} />
-            <Route path="audit-logs"    element={<ITAuditLogs />} />
-            <Route path="salary-kpi"    element={<ITSalaryKPI />} />
-            <Route path="settings"      element={<ITSystemSettings />} />
+            <Route index element={<ITDashboard />} />
+            <Route path="teacher-controls" element={<TeacherControls />} />
+            <Route path="teachers" element={<TeacherManagement />} />
+            <Route path="lessons" element={<LessonManagement />} />
+            <Route path="attendance" element={<AttendanceManagement />} />
+            <Route path="notifications" element={<NotificationCenter />} />
+            <Route path="restore" element={<SystemRestore />} />
+            <Route path="audit-logs" element={<AuditLogs />} />
+            <Route path="admins" element={<AdminManagement />} />
+            <Route path="cctv" element={<CCTVMonitoring />} />
           </Route>
+
+
+
+
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -196,11 +205,11 @@ function App() {
           }}>
             <div className="flex-center" style={{
               width: '48px', height: '48px', borderRadius: '50%',
-              background: (modal.type === 'confirm' || modal.type === 'prompt') 
-                ? 'rgba(99, 102, 241, 0.15)' 
+              background: (modal.type === 'confirm' || modal.type === 'prompt')
+                ? 'rgba(99, 102, 241, 0.15)'
                 : (isSuccess ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'),
-              color: (modal.type === 'confirm' || modal.type === 'prompt') 
-                ? 'var(--primary)' 
+              color: (modal.type === 'confirm' || modal.type === 'prompt')
+                ? 'var(--primary)'
                 : (isSuccess ? 'var(--success)' : 'var(--warning)'),
               alignSelf: 'center', marginBottom: '0.25rem'
             }}>

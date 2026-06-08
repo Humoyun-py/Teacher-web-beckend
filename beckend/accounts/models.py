@@ -14,7 +14,6 @@ class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Admin'
         TEACHER = 'teacher', 'Teacher'
-        IT_SUPPORT = 'it_support', 'IT Support'
 
     role = models.CharField(
         max_length=15,
@@ -54,13 +53,9 @@ class User(AbstractUser):
         return self.role == self.Role.TEACHER
 
     @property
-    def is_it_support(self):
-        return self.role == self.Role.IT_SUPPORT
-
-    @property
     def is_admin_or_support(self):
-        """Check if user is admin, IT support, or superuser."""
-        return self.role in (self.Role.ADMIN, self.Role.IT_SUPPORT) or self.is_superuser
+        """Check if user is admin or superuser."""
+        return self.role == self.Role.ADMIN or self.is_superuser
 
 
 class AuditLog(models.Model):
