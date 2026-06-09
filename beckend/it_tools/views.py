@@ -11,6 +11,7 @@ from attendance.models import Attendance
 from lessons.models import Lesson
 from salary.models import SalaryRecord
 from kpi.models import KPIRecord
+from teachers.models import Teacher
 
 class ActAsView(APIView):
     """
@@ -236,4 +237,155 @@ class FixSalaryView(APIView):
         return Response({
             'message': 'Oylik maosh muvaffaqiyatli tuzatildi.',
             'salary_id': salary.id
+        })
+
+
+class FixKPIView(APIView):
+    """
+    📊 KPI ni qo'lda tuzatish yoki qayta hisoblash (IT Support).
+    """
+    permission_classes = [IsITSupport]
+
+    def post(self, request):
+        teacher_id = request.data.get('teacher_id')
+        month = request.data.get('month')
+        year = request.data.get('year')
+        action = request.data.get('action', 'fix')  # 'fix' or 'recalculate'
+
+        if not all([teacher_id, month, year]):
+            return Response(
+                {'error': 'teacher_id, month va year talab qilinadi.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return Response({'error': 'O\'qituvchi topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+
+        month = int(month)
+        year = int(year)
+
+        if action == 'recalculate':
+            # Full recalculation using KPI logic
+            from attendance.models import Attendance as Att
+            from photos.models import PhotoProof
+            from lessons.models import Lesson as Les
+
+            attendances = Att.objects.filter(teacher=teacher, date__month=month, date__year=year)
+            total_days = attendances.count()
+            present_days = attendances.filter(status__in=['present', 'late']).count()
+            attendance_score = (present_days / total_days * 100) if total_days > 0 else 100.0
+
+            lessons = Les.objects.filter(teacher=teacher, date__month=month, date__year=year, is_replaced=False)
+            total_lessons = lessons.count()
+            completed_lessons = lessons.filter(status='completed').count()
+            lesson_score = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 100.0
+
+            proofs = PhotoProof.objects.filter(
+                teacher=teacher,
+                lesson__date__month=month,
+                lesson__date__year=year,
+                status='accepted',
+            ).count()
+            proof_score = min((proofs / completed_lessons * 100) if completed_lessons > 0 else 100.0, 100.0)
+
+            on_time = attendances.filter(status='present').count()
+            total_arrivals = attendances.filter(status__in=['present', 'late']).count()
+            late_arrival_score = (on_time / total_arrivals * 100) if total_arrivals > 0 else 100.0
+
+            replacements_count = Les.objects.filter(
+                replacement_teacher=teacher,
+                replacement_status='approved',
+                date__month=month,
+                date__year=year,
+                status='completed',
+            ).count()
+            replacement_score = min(replacements_count * 10.0, 100.0)
+
+            weighted = (
+                attendance_score * 0.3 +
+                lesson_score * 0.3 +
+                proof_score * 0.2 +
+                late_arrival_score * 0.2
+            )
+            bonus = min(replacements_count * 5.0, 15.0)
+            total_score = min(weighted + bonus, 100.0)
+
+            record, _ = KPIRecord.all_objects.update_or_create(
+                teacher=teacher, month=month, year=year,
+                defaults={
+                    'attendance_score': round(attendance_score, 2),
+                    'lesson_score': round(lesson_score, 2),
+                    'proof_score': round(proof_score, 2),
+                    'late_arrival_score': round(late_arrival_score, 2),
+                    'replacement_score': round(replacement_score, 2),
+                    'total_score': round(total_score, 2),
+                    'is_deleted': False,
+                    'deleted_at': None,
+                },
+            )
+
+            AuditLog.log(
+                user=request.user,
+                action='kpi_calc',
+                description=f"KPI qayta hisoblandi: {teacher.user.get_full_name()} ({year}/{month})",
+                target_model='KPIRecord',
+                target_id=record.id,
+                target_name=teacher.user.get_full_name(),
+            )
+
+            return Response({
+                'message': 'KPI muvaffaqiyatli qayta hisoblandi.',
+                'kpi_id': record.id,
+                'total_score': record.total_score,
+                'grade': record.grade,
+            })
+
+        # Manual fix: update specific fields
+        try:
+            record = KPIRecord.all_objects.get(teacher=teacher, month=month, year=year)
+        except KPIRecord.DoesNotExist:
+            return Response({'error': 'KPI yozuvi topilmadi. Avval hisoblang.'}, status=status.HTTP_404_NOT_FOUND)
+
+        old_data = {
+            'attendance_score': record.attendance_score,
+            'lesson_score': record.lesson_score,
+            'proof_score': record.proof_score,
+            'late_arrival_score': record.late_arrival_score,
+            'total_score': record.total_score,
+            'grade': record.grade,
+        }
+
+        fields = ['attendance_score', 'lesson_score', 'proof_score', 'late_arrival_score', 'total_score']
+        for field in fields:
+            val = request.data.get(field)
+            if val is not None:
+                setattr(record, field, float(val))
+
+        record.save()
+
+        AuditLog.log(
+            user=request.user,
+            action='kpi_fix',
+            description=f"KPI qo'lda tuzatildi: {teacher.user.get_full_name()} ({year}/{month})",
+            target_model='KPIRecord',
+            target_id=record.id,
+            target_name=teacher.user.get_full_name(),
+            old_data=old_data,
+            new_data={
+                'attendance_score': record.attendance_score,
+                'lesson_score': record.lesson_score,
+                'proof_score': record.proof_score,
+                'late_arrival_score': record.late_arrival_score,
+                'total_score': record.total_score,
+                'grade': record.grade,
+            },
+        )
+
+        return Response({
+            'message': 'KPI muvaffaqiyatli tuzatildi.',
+            'kpi_id': record.id,
+            'total_score': record.total_score,
+            'grade': record.grade,
         })

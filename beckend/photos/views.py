@@ -161,6 +161,65 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         method='get',
+        operation_description="O'qituvchilar bo'yicha rasm yetishmovchilik hisoboti",
+        tags=['Rasm tekshirish'],
+    )
+    @action(detail=False, methods=['get'], permission_classes=[IsAdmin], url_path='missing-by-teacher')
+    def missing_by_teacher(self, request):
+        """Per-teacher breakdown: how many completed lessons have no accepted proof."""
+        from teachers.models import Teacher as T
+        from django.db.models import Q
+
+        now = timezone.localtime()
+        month = int(request.query_params.get('month', now.month))
+        year = int(request.query_params.get('year', now.year))
+
+        teachers = T.objects.filter(status='active').select_related('user')
+        report = []
+
+        for teacher in teachers:
+            completed = Lesson.objects.filter(
+                teacher=teacher,
+                date__month=month,
+                date__year=year,
+                status='completed',
+            )
+            total_completed = completed.count()
+
+            lessons_with_accepted_proof = PhotoProof.objects.filter(
+                teacher=teacher,
+                lesson__in=completed,
+                status='accepted',
+            ).values_list('lesson_id', flat=True)
+
+            missing_count = completed.exclude(id__in=lessons_with_accepted_proof).count()
+
+            report.append({
+                'teacher_id': teacher.id,
+                'employee_id': teacher.employee_id,
+                'full_name': teacher.user.get_full_name(),
+                'completed_lessons': total_completed,
+                'lessons_with_proof': total_completed - missing_count,
+                'missing_proofs': missing_count,
+                'proof_rate': round(
+                    ((total_completed - missing_count) / total_completed * 100)
+                    if total_completed > 0 else 0,
+                    1,
+                ),
+            })
+
+        report.sort(key=lambda x: x['missing_proofs'], reverse=True)
+        total_missing = sum(r['missing_proofs'] for r in report)
+
+        return Response({
+            'month': month,
+            'year': year,
+            'total_missing_proofs': total_missing,
+            'report': report,
+        })
+
+    @swagger_auto_schema(
+        method='get',
         operation_description="Rasm statistikasi",
         tags=['Rasm tekshirish'],
     )

@@ -8,4 +8,5 @@ urlpatterns = [
     path('fix-attendance/', views.FixAttendanceView.as_view(), name='fix-attendance'),
     path('fix-lesson/', views.FixLessonView.as_view(), name='fix-lesson'),
     path('fix-salary/', views.FixSalaryView.as_view(), name='fix-salary'),
+    path('fix-kpi/', views.FixKPIView.as_view(), name='fix-kpi'),
 ]

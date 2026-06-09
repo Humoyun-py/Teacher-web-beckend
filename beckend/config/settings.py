@@ -46,6 +46,13 @@ INSTALLED_APPS = [
     'it_tools.apps.ItToolsConfig',
 ]
 
+# Add celery beat if celery is installed
+try:
+    import celery  # noqa: F401
+    INSTALLED_APPS += ['django_celery_beat']
+except ImportError:
+    pass
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -170,3 +177,62 @@ JWT_ACCESS_TOKEN_LIFETIME_MINUTES = 60 * 24  # 24 hours
 JWT_REFRESH_TOKEN_LIFETIME_DAYS = 1  # 1 kun — keyin qayta login qilish kerak
 
 LOGIN_URL = '/admin/login/'
+
+# Redis & Celery
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Redis cache
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+    }
+} if os.environ.get('REDIS_URL') else {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# Celery beat schedule (requires celery package)
+try:
+    from celery.schedules import crontab
+    CELERY_BEAT_SCHEDULE = {
+        'generate-daily-lessons': {
+            'task': 'lessons.generate_daily_lessons',
+            'schedule': crontab(hour=6, minute=0),
+        },
+        'mark-absent-teachers': {
+            'task': 'attendance.mark_absent_teachers',
+            'schedule': crontab(hour=9, minute=30),
+        },
+        'send-late-alert': {
+            'task': 'attendance.send_late_alert',
+            'schedule': crontab(hour=9, minute=0),
+        },
+        'mark-missed-lessons': {
+            'task': 'lessons.mark_missed_lessons',
+            'schedule': crontab(minute=0, hour='7-17'),
+        },
+        'lesson-reminders': {
+            'task': 'lessons.send_lesson_reminders',
+            'schedule': crontab(minute='*/10', hour='7-17'),
+        },
+        'monthly-kpi-calculation': {
+            'task': 'kpi.calculate_monthly_kpi',
+            'schedule': crontab(day_of_month=1, hour=2, minute=0),
+        },
+        'monthly-salary-calculation': {
+            'task': 'salary.calculate_monthly_salary',
+            'schedule': crontab(day_of_month=2, hour=2, minute=0),
+        },
+    }
+except ImportError:
+    pass

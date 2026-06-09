@@ -10,5 +10,6 @@ router = DefaultRouter()
 router.register('', views.NotificationViewSet, basename='notification')
 
 urlpatterns = [
+    path('send/', views.SendNotificationView.as_view(), name='send-notification'),
     path('', include(router.urls)),
 ]

@@ -18,3 +18,26 @@ class NotificationMarkReadSerializer(serializers.Serializer):
         child=serializers.IntegerField(),
         required=True
     )
+
+
+class SendNotificationSerializer(serializers.Serializer):
+    """Serializer for admin to send notifications."""
+    title = serializers.CharField(max_length=255)
+    message = serializers.CharField()
+    notification_type = serializers.ChoiceField(
+        choices=Notification.Type.choices,
+        default=Notification.Type.INFO,
+    )
+    recipient_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text="Specific user IDs. Empty = send to all active teachers.",
+    )
+    send_to_all_teachers = serializers.BooleanField(
+        default=False,
+        help_text="If True, sends to all active teachers.",
+    )
+    send_to_all_admins = serializers.BooleanField(
+        default=False,
+        help_text="If True, sends to all admins.",
+    )
