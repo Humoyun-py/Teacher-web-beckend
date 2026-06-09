@@ -7,8 +7,10 @@ from django.db import models
 from django.conf import settings
 from teachers.models import Teacher
 from lessons.models import Lesson
+from accounts.models import SoftDeleteModel
 
-class PhotoProof(models.Model):
+
+class PhotoProof(SoftDeleteModel):
     """Dars isboti sifatida yuboriladigan rasm."""
 
     class Status(models.TextChoices):

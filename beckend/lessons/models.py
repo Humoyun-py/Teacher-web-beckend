@@ -6,9 +6,11 @@ Lesson scheduling, schedule management, and conflict detection.
 from django.db import models
 from django.conf import settings
 from teachers.models import Teacher, Subject, SchoolClass
+from accounts.models import SoftDeleteModel
 
 
-class LessonSchedule(models.Model):
+
+class LessonSchedule(SoftDeleteModel):
     """Dars jadvali - haftalik takrorlanuvchi dars."""
 
     class DayOfWeek(models.IntegerChoices):
@@ -103,7 +105,7 @@ class LessonSchedule(models.Model):
         }
 
 
-class Lesson(models.Model):
+class Lesson(SoftDeleteModel):
     """Aniq bir sana uchun dars instansiyasi."""
 
     class Status(models.TextChoices):

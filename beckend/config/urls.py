@@ -64,6 +64,12 @@ urlpatterns = [
     path('api/v1/photos/', include('photos.urls')),
     path('api/v1/analytics/', include('analytics.urls')),
     path('api/v1/notifications/', include('notifications.urls')),
+    path('api/v1/kpi/', include('kpi.urls')),
+    path('api/v1/salary/', include('salary.urls')),
+    path('api/v1/cctv/', include('cctv.urls')),
+    path('api/v1/settings/', include('system_settings.urls')),
+    path('api/v1/restore/', include('restore.urls')),
+    path('api/v1/it-tools/', include('it_tools.urls')),
 
     # Browser login for API
     path('api-auth/', include('rest_framework.urls')),

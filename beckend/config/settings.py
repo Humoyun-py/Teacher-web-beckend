@@ -38,6 +38,12 @@ INSTALLED_APPS = [
     'photos.apps.PhotosConfig',
     'analytics.apps.AnalyticsConfig',
     'notifications.apps.NotificationsConfig',
+    'kpi.apps.KpiConfig',
+    'salary.apps.SalaryConfig',
+    'cctv.apps.CctvConfig',
+    'system_settings.apps.SystemSettingsConfig',
+    'restore.apps.RestoreConfig',
+    'it_tools.apps.ItToolsConfig',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.AuditLogMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'

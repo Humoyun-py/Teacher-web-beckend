@@ -8,12 +8,64 @@ from django.db import models
 import json
 
 
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        return super().update(is_deleted=True)
+
+    def hard_delete(self):
+        return super().delete()
+
+    def active(self):
+        return self.filter(is_deleted=False)
+
+    def deleted(self):
+        return self.filter(is_deleted=True)
+
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
+
+    def all_with_deleted(self):
+        return SoftDeleteQuerySet(self.model, using=self._db)
+
+    def deleted_set(self):
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=True)
+
+
+class SoftDeleteModel(models.Model):
+    is_deleted = models.BooleanField(default=False, verbose_name="O'chirilgan")
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="O'chirilgan vaqt")
+
+    objects = SoftDeleteManager()
+    all_objects = models.Manager() # Standard Django manager that doesn't filter by is_deleted
+
+    class Meta:
+        abstract = True
+
+    def delete(self, *args, **kwargs):
+        self.is_deleted = True
+        import django.utils.timezone as timezone
+        self.deleted_at = timezone.now()
+        self.save()
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+
+    def hard_delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+
+
+
 class User(AbstractUser):
     """Custom user model with role-based access."""
 
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Admin'
         TEACHER = 'teacher', 'Teacher'
+        IT_SUPPORT = 'it_support', 'IT Support'
 
     role = models.CharField(
         max_length=15,
@@ -46,16 +98,23 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == self.Role.ADMIN
+        return self.role == self.Role.ADMIN or self.is_superuser
 
     @property
     def is_teacher(self):
         return self.role == self.Role.TEACHER
 
     @property
+    def is_it_support(self):
+        return self.role == self.Role.IT_SUPPORT
+
+    @property
     def is_admin_or_support(self):
-        """Check if user is admin or superuser."""
-        return self.role == self.Role.ADMIN or self.is_superuser
+        """Check if user is admin, IT support, or superuser."""
+        return (
+            self.role in (self.Role.ADMIN, self.Role.IT_SUPPORT)
+            or self.is_superuser
+        )
 
 
 class AuditLog(models.Model):
@@ -78,9 +137,14 @@ class AuditLog(models.Model):
         BLOCK = 'block', 'Bloklash'
         UNBLOCK = 'unblock', 'Blokdan chiqarish'
         SALARY_CALC = 'salary_calc', 'Oylik hisoblash'
+        SALARY_FIX = 'salary_fix', 'Oylik tuzatish'
+        KPI_CALC = 'kpi_calc', 'KPI hisoblash'
+        KPI_FIX = 'kpi_fix', 'KPI tuzatish'
         PHOTO_REVIEW = 'photo_review', 'Rasm tekshirish'
         SYSTEM_CONFIG = 'system_config', 'Tizim sozlama'
         ADMIN_ACTION = 'admin_action', 'Admin amali'
+        ACT_AS = 'act_as', 'Boshqa foydalanuvchi sifatida'
+        CCTV_ACTION = 'cctv_action', 'CCTV amali'
 
     user = models.ForeignKey(
         User,

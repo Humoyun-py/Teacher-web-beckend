@@ -5,9 +5,11 @@ Teacher profiles, subjects, and class assignments.
 
 from django.db import models
 from django.conf import settings
+from accounts.models import SoftDeleteModel
 
 
-class Subject(models.Model):
+
+class Subject(SoftDeleteModel):
     """Fan (Subject) model."""
 
     name = models.CharField(max_length=100, unique=True, verbose_name='Fan nomi')
@@ -24,7 +26,7 @@ class Subject(models.Model):
         return self.name
 
 
-class SchoolClass(models.Model):
+class SchoolClass(SoftDeleteModel):
     """Sinf (Class) model."""
 
     name = models.CharField(max_length=20, verbose_name='Sinf nomi')  # e.g., "5-A", "9-B"
@@ -54,7 +56,7 @@ class SchoolClass(models.Model):
         return self.name
 
 
-class Teacher(models.Model):
+class Teacher(SoftDeleteModel):
     """Teacher profile model linked to User."""
 
     class Status(models.TextChoices):
