@@ -19,22 +19,27 @@ export default function ITDashboard() {
     const loadStats = async () => {
         try {
             setLoading(true);
-            const dashboardData = await api.getAdminDashboard();
-            const classes = await api.getClasses();
-            const subjects = await api.getSubjects();
+            const [dashRes, classesRes, subjectsRes] = await Promise.allSettled([
+                api.getAdminDashboard(),
+                api.getClasses(),
+                api.getSubjects(),
+            ]);
+            const d = dashRes.status === 'fulfilled' ? dashRes.value : {};
+            const classes = classesRes.status === 'fulfilled' ? classesRes.value : {};
+            const subjects = subjectsRes.status === 'fulfilled' ? subjectsRes.value : {};
             setStats({
-                total_teachers: dashboardData.total_teachers || 0,
-                present_today: dashboardData.attendance_today?.present || 0,
-                absent_today: dashboardData.attendance_today?.absent || 0,
-                late_today: dashboardData.attendance_today?.late || 0,
-                total_lessons: dashboardData.lessons_today?.total || 0,
-                completed_lessons: dashboardData.lessons_today?.completed || 0,
-                missed_lessons: dashboardData.lessons_today?.missed || 0,
-                videos_sent: dashboardData.videos_today?.sent || 0,
-                videos_pending: dashboardData.videos_today?.pending || 0,
-                active_teachers: dashboardData.active_teachers_count || 0,
-                total_classes: classes.length || classes.results?.length || 0,
-                total_subjects: subjects.length || subjects.results?.length || 0
+                total_teachers: d.teachers?.total || 0,
+                present_today: d.teachers?.present || 0,
+                absent_today: d.teachers?.absent || 0,
+                late_today: d.teachers?.late || 0,
+                total_lessons: d.lessons?.total || 0,
+                completed_lessons: d.lessons?.completed || 0,
+                missed_lessons: d.lessons?.missed || 0,
+                videos_sent: d.photos?.accepted || 0,
+                videos_pending: d.photos?.pending || 0,
+                active_teachers: d.teachers?.total || 0,
+                total_classes: classes.results?.length || (Array.isArray(classes) ? classes.length : 0),
+                total_subjects: subjects.results?.length || (Array.isArray(subjects) ? subjects.length : 0)
             });
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
