@@ -17,16 +17,14 @@ export default function AuditLogs() {
     const loadLogs = async () => {
         try {
             setLoading(true);
-            // Backendda maxsus audit log bo'lmagani uchun Notifications dan foydalanamiz
-            // chunki barcha muhim harakatlar bildirishnoma sifatida saqlanadi
-            const data = await api.getNotifications();
+            const data = await api.getAuditLogs();
             const formattedLogs = (data.results || data).map(item => ({
                 id: item.id,
-                user: item.sender_name || 'System',
-                action: item.title,
-                target: item.message,
+                user: item.user_name || 'System',
+                action: item.action_display || item.action,
+                target: item.description || `${item.target_model} ${item.target_name ? `(${item.target_name})` : ''}`,
                 time: new Date(item.created_at).toLocaleString('uz-UZ'),
-                type: item.type || 'info'
+                type: item.action || 'info'
             }));
             setLogs(formattedLogs);
         } catch (err) {
@@ -37,9 +35,10 @@ export default function AuditLogs() {
     };
 
     const getTypeColor = (type) => {
-        if (type.includes('error')) return 'var(--danger)';
-        if (type.includes('success')) return 'var(--success)';
-        if (type.includes('warning')) return 'var(--warning)';
+        const t = String(type).toLowerCase();
+        if (t.includes('delete') || t.includes('block')) return 'var(--danger)';
+        if (t.includes('create') || t.includes('restore') || t.includes('unblock') || t.includes('success')) return 'var(--success)';
+        if (t.includes('update') || t.includes('fix') || t.includes('change') || t.includes('config')) return 'var(--warning)';
         return 'var(--primary)';
     };
 
