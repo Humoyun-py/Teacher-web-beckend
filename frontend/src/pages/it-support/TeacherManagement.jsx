@@ -17,7 +17,7 @@ export default function TeacherManagement() {
     const [drawerMode, setDrawerMode] = useState('add'); // 'add' | 'edit' | 'password' | 'assign'
     const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [formData, setFormData] = useState({
-        first_name: '', last_name: '', username: '', phone: '',
+        first_name: '', last_name: '', username: '', phone: '', employee_id: '',
         password: '', password2: '', is_active: true, subject_ids: [], class_ids: []
     });
     const [saving, setSaving] = useState(false);
@@ -40,9 +40,9 @@ export default function TeacherManagement() {
         setDrawerMode(mode);
         setSelectedTeacher(teacher);
         if (mode === 'edit' && teacher) {
-            setFormData({ first_name: teacher.first_name, last_name: teacher.last_name, username: teacher.username, phone: teacher.phone || '', password: '', password2: '', is_active: teacher.is_active, subject_ids: [], class_ids: [] });
+            setFormData({ first_name: teacher.first_name, last_name: teacher.last_name, username: teacher.username, phone: teacher.phone || '', employee_id: teacher.employee_id || '', password: '', password2: '', is_active: teacher.is_active, subject_ids: [], class_ids: [] });
         } else if (mode === 'add') {
-            setFormData({ first_name: '', last_name: '', username: '', phone: '', password: '', password2: '', is_active: true, subject_ids: [], class_ids: [] });
+            setFormData({ first_name: '', last_name: '', username: '', phone: '', employee_id: '', password: '', password2: '', is_active: true, subject_ids: [], class_ids: [] });
         } else if (mode === 'assign' && teacher) {
             setFormData({ ...formData, subject_ids: teacher.subjects?.map(s => s.id) || [], class_ids: teacher.classes?.map(c => c.id) || [] });
         }
@@ -53,7 +53,10 @@ export default function TeacherManagement() {
         setSaving(true);
         try {
             if (drawerMode === 'add') {
-                await api.createTeacher({ first_name: formData.first_name, last_name: formData.last_name, username: formData.username, password: formData.password, is_active: formData.is_active });
+                const teacherData = { first_name: formData.first_name, last_name: formData.last_name, username: formData.username, password: formData.password, is_active: formData.is_active };
+                if (formData.employee_id) teacherData.employee_id = formData.employee_id;
+                if (formData.phone) teacherData.phone = formData.phone;
+                await api.createTeacher(teacherData);
                 await loadAll();
                 setShowDrawer(false);
             } else if (drawerMode === 'edit') {
@@ -247,10 +250,10 @@ export default function TeacherManagement() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
                             {(drawerMode === 'add' || drawerMode === 'edit') && (<>
-                                {[{ l: 'Ism', k: 'first_name', t: 'text' }, { l: 'Familiya', k: 'last_name', t: 'text' }, { l: 'Username', k: 'username', t: 'text' }, { l: 'Telefon', k: 'phone', t: 'tel' }].map(f => (
+                                {[{ l: 'Ism', k: 'first_name', t: 'text' }, { l: 'Familiya', k: 'last_name', t: 'text' }, { l: 'Username', k: 'username', t: 'text' }, { l: 'Telefon', k: 'phone', t: 'tel' }, { l: 'Xodim ID (ixtiyoriy)', k: 'employee_id', t: 'text', placeholder: 'Avtomatik generatsiya qilinadi' }].map(f => (
                                     <div key={f.k}>
                                         <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>{f.l}</label>
-                                        <input className="input-field" type={f.t} style={{ width: '100%', height: '3.25rem' }} value={formData[f.k]} onChange={e => setFormData({ ...formData, [f.k]: e.target.value })} />
+                                        <input className="input-field" type={f.t} placeholder={f.placeholder || ''} style={{ width: '100%', height: '3.25rem' }} value={formData[f.k]} onChange={e => setFormData({ ...formData, [f.k]: e.target.value })} />
                                     </div>
                                 ))}
                                 {drawerMode === 'add' && (

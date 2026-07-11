@@ -69,7 +69,9 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(write_only=True)
     phone = serializers.CharField(write_only=True, required=False)
 
-    # Teacher fields
+    # Teacher fields - employee_id ixtiyoriy, avtomatik generatsiya qilinadi
+    employee_id = serializers.CharField(required=False, allow_blank=True)
+
     subject_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True, required=False,
@@ -88,6 +90,20 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
             'monthly_salary', 'subject_ids', 'class_ids',
         ]
 
+    def _generate_employee_id(self):
+        """Avtomatik employee_id generatsiya qilish: TCH-0001, TCH-0002, ..."""
+        import re
+        last_teacher = Teacher.objects.order_by('-id').first()
+        if last_teacher and last_teacher.employee_id:
+            match = re.search(r'(\d+)$', last_teacher.employee_id)
+            if match:
+                next_num = int(match.group(1)) + 1
+            else:
+                next_num = Teacher.objects.count() + 1
+        else:
+            next_num = 1
+        return f"TCH-{next_num:04d}"
+
     def create(self, validated_data):
         from accounts.models import User
 
@@ -103,6 +119,10 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         subject_ids = validated_data.pop('subject_ids', [])
         class_ids = validated_data.pop('class_ids', [])
+
+        # employee_id bo'lmasa avtomatik generatsiya qilish
+        if not validated_data.get('employee_id'):
+            validated_data['employee_id'] = self._generate_employee_id()
 
         # Create user
         user = User(**user_data)
