@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Search, RefreshCcw, Edit2, X, Check, Clock } from 'lucide-react';
+import { Activity, Search, RefreshCcw, Edit2, X, Check, Clock, Edit } from 'lucide-react';
 import { api } from '../../api';
 
 const ATT_STATUS = {
@@ -9,13 +9,30 @@ const ATT_STATUS = {
     excused: { label: 'Sababli', color: 'var(--info)', bg: 'rgba(59,130,246,0.12)' },
 };
 
+const getTimePart = (dateTimeStr) => {
+    if (!dateTimeStr) return '';
+    if (dateTimeStr.includes('T')) {
+        const timePart = dateTimeStr.split('T')[1];
+        return timePart.substring(0, 5);
+    }
+    if (dateTimeStr.includes(' ')) {
+        const timePart = dateTimeStr.split(' ')[1];
+        return timePart.substring(0, 5);
+    }
+    return '';
+};
+
 export default function AttendanceManagement() {
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    
     const [editingRecord, setEditingRecord] = useState(null);
     const [newStatus, setNewStatus] = useState('');
+    const [checkInTime, setCheckInTime] = useState('');
+    const [checkOutTime, setCheckOutTime] = useState('');
+    const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => { loadRecords(); }, []);
@@ -29,10 +46,36 @@ export default function AttendanceManagement() {
         finally { setLoading(false); }
     };
 
+    const handleEditClick = (record) => {
+        setEditingRecord(record);
+        setNewStatus(record.status);
+        setCheckInTime(getTimePart(record.check_in_time));
+        setCheckOutTime(getTimePart(record.check_out_time));
+        setNotes(record.notes || '');
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
-            await api.patchAttendance(editingRecord.id, { status: newStatus });
+            const payload = {
+                attendance_id: editingRecord.id,
+                status: newStatus,
+                notes: notes
+            };
+
+            if (checkInTime) {
+                payload.check_in_time = `${editingRecord.date}T${checkInTime}:00`;
+            } else {
+                payload.check_in_time = null;
+            }
+
+            if (checkOutTime) {
+                payload.check_out_time = `${editingRecord.date}T${checkOutTime}:00`;
+            } else {
+                payload.check_out_time = null;
+            }
+
+            await api.fixAttendance(payload);
             setEditingRecord(null);
             loadRecords();
         } catch (e) { alert('Xatolik: ' + (e.data?.detail || 'Ruxsat etilmadi')); }
@@ -54,7 +97,7 @@ export default function AttendanceManagement() {
                         <h1 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <Activity className="text-primary" size={32} /> Davomat Boshqaruvi
                         </h1>
-                        <p style={{ color: 'var(--text-muted)' }}>O'qituvchilarning kunlik davomati va holatini boshqarish</p>
+                        <p style={{ color: 'var(--text-muted)' }}>O'qituvchilarning kunlik davomati, kelish/ketish vaqtlarini tahrirlash</p>
                     </div>
                     <button className="btn btn-outline" onClick={loadRecords}><RefreshCcw size={18} /></button>
                 </div>
@@ -83,7 +126,7 @@ export default function AttendanceManagement() {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--surface-border)', background: 'rgba(255,255,255,0.02)' }}>
-                                    {["O'qituvchi", 'Sana', 'Kelish Vaqti', 'Status', 'Amallar'].map(h => (
+                                    {["O'qituvchi", 'Sana', 'Kelish Vaqti', 'Ketish Vaqti', 'Status', 'Amallar'].map(h => (
                                         <th key={h} style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -111,14 +154,20 @@ export default function AttendanceManagement() {
                                             <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     <Clock size={14} />
-                                                    {record.check_in_time || '—'}
+                                                    {getTimePart(record.check_in_time) || '—'}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <Clock size={14} />
+                                                    {getTimePart(record.check_out_time) || '—'}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, background: sc.bg, color: sc.color }}>{sc.label}</span>
                                             </td>
                                             <td style={{ padding: '1rem 1.5rem' }}>
-                                                <button onClick={() => { setEditingRecord(record); setNewStatus(record.status); }} style={{ padding: '7px', borderRadius: '8px', border: 'none', background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', cursor: 'pointer' }}>
+                                                <button onClick={() => handleEditClick(record)} style={{ padding: '7px', borderRadius: '8px', border: 'none', background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', cursor: 'pointer' }}>
                                                     <Edit2 size={14} />
                                                 </button>
                                             </td>
@@ -133,7 +182,7 @@ export default function AttendanceManagement() {
 
             {editingRecord && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setEditingRecord(null)}>
-                    <div style={{ width: '420px', background: 'var(--bg-darker)', borderRadius: '24px', padding: '2.5rem', border: '1px solid var(--surface-border)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ width: '460px', background: 'var(--bg-darker)', borderRadius: '24px', padding: '2.5rem', border: '1px solid var(--surface-border)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Davomatni O'zgartirish</h2>
                             <button onClick={() => setEditingRecord(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={24} /></button>
@@ -142,16 +191,52 @@ export default function AttendanceManagement() {
                             <p style={{ fontWeight: 700, margin: 0 }}>{editingRecord.teacher?.first_name} {editingRecord.teacher?.last_name}</p>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '4px 0 0 0' }}>Sana: {editingRecord.date}</p>
                         </div>
+                        
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Kirish Vaqti (Keldi)</label>
+                                <input 
+                                    type="time" 
+                                    className="input-field" 
+                                    style={{ width: '100%', height: '3rem' }} 
+                                    value={checkInTime} 
+                                    onChange={e => setCheckInTime(e.target.value)} 
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Chiqish Vaqti (Ketdi)</label>
+                                <input 
+                                    type="time" 
+                                    className="input-field" 
+                                    style={{ width: '100%', height: '3rem' }} 
+                                    value={checkOutTime} 
+                                    onChange={e => setCheckOutTime(e.target.value)} 
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.75rem' }}>Yangi Status</label>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.75rem' }}>Status</label>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                                 {Object.entries(ATT_STATUS).map(([k, v]) => (
-                                    <button key={k} onClick={() => setNewStatus(k)} style={{ padding: '1rem', borderRadius: '12px', border: '2px solid', borderColor: newStatus === k ? v.color : 'rgba(255,255,255,0.05)', background: newStatus === k ? v.bg : 'rgba(255,255,255,0.02)', color: newStatus === k ? v.color : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700 }}>
+                                    <button key={k} onClick={() => setNewStatus(k)} style={{ padding: '0.75rem', borderRadius: '12px', border: '2px solid', borderColor: newStatus === k ? v.color : 'rgba(255,255,255,0.05)', background: newStatus === k ? v.bg : 'rgba(255,255,255,0.02)', color: newStatus === k ? v.color : 'var(--text-muted)', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
                                         {v.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Izoh / Sabab</label>
+                            <textarea 
+                                className="input-field" 
+                                style={{ width: '100%', height: '4rem', padding: '0.75rem', resize: 'none' }} 
+                                placeholder="Tuzatish sababini yozing..."
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                            />
+                        </div>
+
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button className="btn btn-outline" style={{ flex: 1, height: '3.5rem' }} onClick={() => setEditingRecord(null)}>Bekor</button>
                             <button className="btn btn-primary" style={{ flex: 1, height: '3.5rem' }} onClick={handleSave} disabled={saving}>{saving ? 'Saqlanmoqda...' : 'Saqlash'}</button>

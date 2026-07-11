@@ -66,8 +66,6 @@ class FixAttendanceView(APIView):
     def post(self, request):
         attendance_id = request.data.get('attendance_id')
         status_val = request.data.get('status')
-        check_in = request.data.get('check_in_time')
-        check_out = request.data.get('check_out_time')
         notes = request.data.get('notes', '')
         
         if not attendance_id:
@@ -87,11 +85,17 @@ class FixAttendanceView(APIView):
         
         if status_val:
             attendance.status = status_val
-        if check_in:
-            attendance.check_in_time = check_in
-        if check_out:
-            attendance.check_out_time = check_out
-        if notes:
+        
+        # Kirish va chiqish vaqtlarini tozalash yoki yangilash imkoni
+        if 'check_in_time' in request.data:
+            check_in = request.data.get('check_in_time')
+            attendance.check_in_time = check_in if check_in else None
+            
+        if 'check_out_time' in request.data:
+            check_out = request.data.get('check_out_time')
+            attendance.check_out_time = check_out if check_out else None
+            
+        if notes is not None:
             attendance.notes = notes
             
         attendance.save()
