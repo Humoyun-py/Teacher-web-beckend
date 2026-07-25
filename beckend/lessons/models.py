@@ -122,17 +122,17 @@ class Lesson(SoftDeleteModel):
     )
     teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE,
-        related_name='lessons',
+        related_name='actual_lessons',
         verbose_name='Teacher',
     )
     subject = models.ForeignKey(
         Subject, on_delete=models.CASCADE,
-        related_name='lessons',
+        related_name='actual_subject_lessons',
         verbose_name='Fan',
     )
     school_class = models.ForeignKey(
         SchoolClass, on_delete=models.CASCADE,
-        related_name='lessons',
+        related_name='actual_class_lessons',
         verbose_name='Sinf',
     )
     date = models.DateField(verbose_name='Sana')

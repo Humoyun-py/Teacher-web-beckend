@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { BookOpen, Plus, Edit2, Trash2, Search, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
 
 export default function Subjects() {
   const [subjects, setSubjects] = useState([]);

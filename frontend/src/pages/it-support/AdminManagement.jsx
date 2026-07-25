@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, UserPlus, Lock, Trash2, Edit, CheckCircle, XCircle, X, RefreshCcw, Key } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, UserPlus, Lock, Trash2, CheckCircle, X, RefreshCcw, Key } from 'lucide-react';
 import { api } from '../../api';
 
 export default function AdminManagement() {
@@ -56,7 +56,7 @@ export default function AdminManagement() {
         try {
             await api.deleteUser(admin.id);
             loadAdmins();
-        } catch (e) { alert('O\'chirishda xatolik'); }
+        } catch (_) { alert('O\'chirishda xatolik'); }
     };
 
     const handleResetPassword = async () => {

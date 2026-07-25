@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Lock, Mail, QrCode, LogIn } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, LogIn } from 'lucide-react';
 import { api } from '../api';
 
 export default function Login() {

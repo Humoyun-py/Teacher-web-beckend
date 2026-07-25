@@ -1,23 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-    RefreshCcw, Search, Calendar, Clock, AlertTriangle,
-    CheckCircle, ArrowLeftRight, Trash2, Edit3, Save, X, UserCheck
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RefreshCcw, Search, Trash2, Edit3 } from 'lucide-react';
 import { api } from '../../api';
 
 export default function SystemRestore() {
-    const [activeTab, setActiveTab] = useState('lessons'); // 'lessons' | 'attendance'
+    const [activeTab, setActiveTab] = useState('lessons'); // 'lessons' | 'attendance' | 'deleted'
     const [lessons, setLessons] = useState([]);
     const [attendance, setAttendance] = useState([]);
+    const [deletedRecords, setDeletedRecords] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [editingLesson, setEditingLesson] = useState(null);
     const [editingAttendance, setEditingAttendance] = useState(null);
+    const [deletedModel, setDeletedModel] = useState('lessons');
 
     useEffect(() => {
         if (activeTab === 'lessons') loadLessons();
-        else loadAttendance();
-    }, [activeTab]);
+        else if (activeTab === 'attendance') loadAttendance();
+        else if (activeTab === 'deleted') loadDeletedRecords();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, deletedModel]);
 
     const loadLessons = async () => {
         try {
@@ -43,13 +44,26 @@ export default function SystemRestore() {
         }
     };
 
-    const handleStatusChange = async (lessonId, newStatus) => {
+    const loadDeletedRecords = async () => {
         try {
-            await api.patchLesson(lessonId, { status: newStatus });
-            alert("✅ Muvaffaqiyatli o'zgartirildi");
-            loadLessons();
+            setLoading(true);
+            const data = await api.getDeletedRecords(deletedModel);
+            setDeletedRecords(data.deleted_records || data.results || []);
         } catch (err) {
-            alert("❌ Xatolik");
+            console.error("O'chirilgan yozuvlarni yuklashda xato:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRestore = async (modelName, pk) => {
+        if (!window.confirm(`${modelName} #${pk} tiklashni tasdiqlaysizmi?`)) return;
+        try {
+            await api.restoreRecord(modelName, pk);
+            alert('✅ Yozuv tiklandi');
+            loadDeletedRecords();
+        } catch (err) {
+            alert('Xatolik: ' + JSON.stringify(err.data || err.message));
         }
     };
 
@@ -62,7 +76,7 @@ export default function SystemRestore() {
             alert("✅ Davomat yangilandi");
             setEditingAttendance(null);
             loadAttendance();
-        } catch (err) {
+        } catch (_) {
             alert("❌ Xatolik");
         }
     };
@@ -92,27 +106,71 @@ export default function SystemRestore() {
                     >
                         Davomat
                     </button>
+                    <button
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'deleted' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-main'}`}
+                        onClick={() => setActiveTab('deleted')}
+                    >
+                        O'chirilganlar
+                    </button>
                 </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '0' }}>
+                <div className="glass-panel" style={{ padding: '0' }}>
                 <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--surface-border)' }} className="flex-between gap-4">
-                    <div className="relative flex-1">
+                    <div className="relative flex-1" style={{ display: 'flex', gap: '0.5rem' }}>
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                         <input
                             className="input-field w-full pl-10"
-                            placeholder={`${activeTab === 'lessons' ? 'Dars yoki o\'qituvchi' : 'O\'qituvchi'} bo'yicha qidiruv...`}
+                            placeholder={`${activeTab === 'lessons' ? 'Dars yoki o\'qituvchi' : activeTab === 'attendance' ? 'O\'qituvchi' : 'Qidiruv...'} bo'yicha qidiruv...`}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
+                        {activeTab === 'deleted' && (
+                            <select className="input-field" value={deletedModel} onChange={e => setDeletedModel(e.target.value)} style={{ width: 'auto' }}>
+                                <option value="lessons">Darslar</option>
+                                <option value="attendance">Davomat</option>
+                                <option value="teachers">O'qituvchilar</option>
+                                <option value="subjects">Fanlar</option>
+                                <option value="classes">Sinflar</option>
+                            </select>
+                        )}
                     </div>
-                    <button className="btn btn-outline" onClick={activeTab === 'lessons' ? loadLessons : loadAttendance}>
+                    <button className="btn btn-outline" onClick={activeTab === 'lessons' ? loadLessons : activeTab === 'attendance' ? loadAttendance : loadDeletedRecords}>
                         <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
                     </button>
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
-                    {activeTab === 'lessons' ? (
+                    {activeTab === 'deleted' ? (
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Model</th>
+                                    <th>Nomi</th>
+                                    <th>O'chirilgan vaqt</th>
+                                    <th>Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {deletedRecords.length === 0 ? (
+                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>O'chirilgan yozuvlar topilmadi</td></tr>
+                                ) : deletedRecords.map(rec => (
+                                    <tr key={rec.id || rec.pk}>
+                                        <td>{rec.id || rec.pk}</td>
+                                        <td style={{ textTransform: 'capitalize' }}>{rec.model || deletedModel}</td>
+                                        <td style={{ fontWeight: 600 }}>{rec.name || rec.display || JSON.stringify(rec.data || rec).slice(0, 50)}</td>
+                                        <td className="text-xs text-muted">{rec.deleted_at ? new Date(rec.deleted_at).toLocaleString('uz-UZ') : '—'}</td>
+                                        <td>
+                                            <button className="btn btn-ghost btn-sm text-success" onClick={() => handleRestore(rec.model || deletedModel, rec.id || rec.pk)}>
+                                                <RefreshCcw size={14} /> Tiklash
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : activeTab === 'lessons' ? (
                         <table className="table">
                             <thead>
                                 <tr>

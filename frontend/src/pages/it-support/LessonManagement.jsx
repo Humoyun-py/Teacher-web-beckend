@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, RefreshCcw, Search, Play, Check, X, Edit2, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BookOpen, RefreshCcw, Search, Play, Check, X, Edit2 } from 'lucide-react';
 import { api } from '../../api';
 
 const STATUS_COLORS = {

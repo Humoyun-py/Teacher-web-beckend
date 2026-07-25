@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Users, Plus, Search, Edit2, Trash2, Lock, Unlock, Eye, EyeOff,
-    BookOpen, GraduationCap, Shield, RefreshCcw, X, Check, AlertTriangle,
-    Phone, Mail, User, Key, ChevronDown, ChevronUp, Filter
-} from 'lucide-react';
+import { Users, Plus, Search, Edit2, Trash2, Lock, Unlock, BookOpen, RefreshCcw, X, Key, ChevronDown, ChevronUp } from 'lucide-react';
 import { api } from '../../api';
 
 export default function TeacherManagement() {
@@ -83,13 +79,13 @@ export default function TeacherManagement() {
         try {
             await api.patchTeacher(teacher.id, { is_active: !teacher.is_active });
             loadAll();
-        } catch (e) { alert('Xatolik'); }
+        } catch (_) { alert('Xatolik'); }
     };
 
     const handleDelete = async (teacher) => {
         if (!window.confirm(`${teacher.first_name} ${teacher.last_name} ni o'CHIRMOQCHIMISIZ? Bu amalni qaytarib bo'lmaydi!`)) return;
         try { await api.deleteTeacher(teacher.id); loadAll(); }
-        catch (e) { alert('O\'chirishda xatolik'); }
+        catch (_) { alert('O\'chirishda xatolik'); }
     };
 
     const filtered = teachers.filter(t => {

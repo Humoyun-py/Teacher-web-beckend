@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, QrCode, Search, Loader, X, Maximize } from 'lucide-react';
 import { api } from '../../api';
 

@@ -1,0 +1,55 @@
+# Backend
+beckend/venv/
+beckend/__pycache__/
+beckend/*.pyc
+beckend/media/
+beckend/staticfiles/
+beckend/.env
+beckend/.idea/
+beckend/.vscode/
+beckend/db.sqlite3
+beckend/*.sqlite3
+
+# Frontend
+frontend/node_modules/
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & Temp
+*.tmp
+.cache/
+
+# Scripts with hardcoded credentials (security)
+frontend/test_checkin.js
+frontend/test_login.js
+frontend/generate_door_qr.js
+frontend/generate_door_qr.cjs
+beckend/create_it_user.py
+
+# Python
+*.pyc
+__pycache__/
+
+# Docker
+*.log

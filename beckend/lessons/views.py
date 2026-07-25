@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import viewsets, status, filters, permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
@@ -134,7 +135,7 @@ class LessonScheduleViewSet(viewsets.ModelViewSet):
                 'has_conflict': False,
                 'message': 'Konflikt topilmadi. Dars yaratish mumkin.',
             })
-        except Exception as e:
+        except ValidationError:
             return Response({
                 'has_conflict': True,
                 'conflicts': serializer.errors,

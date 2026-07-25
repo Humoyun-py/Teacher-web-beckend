@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, PlayCircle, StopCircle, Loader, RefreshCw, Clock, AlertTriangle, MapPin, Building2 } from 'lucide-react';
 import { api } from '../../api';
 
@@ -35,7 +35,7 @@ export default function Lessons() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadLessons(); }, [filter, dateFilter]);
+  useEffect(() => { loadLessons(); }, [filter, dateFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStart = async (id) => {
     setActionLoading(id + '-start');
@@ -81,6 +81,15 @@ export default function Lessons() {
           <p className="text-muted">Barcha darslarni kuzatish — xona, etaj, vaqtlar bilan</p>
         </div>
         <div className="flex-center gap-2">
+          <button className="btn btn-outline" onClick={async () => { setLoading(true); try { const res = await api.getLessonsToday(); setLessons(res.results || []); } catch (e) { console.error(e); } finally { setLoading(false); } }}>
+            📅 Bugun
+          </button>
+          <button className="btn btn-outline" onClick={async () => { setLoading(true); try { const res = await api.getMissedLessons(); setLessons(res.results || []); } catch (e) { console.error(e); } finally { setLoading(false); } }}>
+            ❌ Missed
+          </button>
+          <button className="btn btn-outline" onClick={async () => { setLoading(true); try { const res = await api.getLateStartedLessons(); setLessons(res.results || []); } catch (e) { console.error(e); } finally { setLoading(false); } }}>
+            ⏰ Kech boshlangan
+          </button>
           <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleMarkAbsent}>
             <AlertTriangle size={15} /> Kelmaganlarni belgilash
           </button>

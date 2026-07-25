@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Users, Calendar, CheckCircle, XCircle, Clock, Video,
-    Activity, TrendingUp, Filter, Download, Shield, Zap,
-    Database, Server, Globe, Bell, BookOpen, Search, Layers, Layout, ChevronRight
-} from 'lucide-react';
+import { Users, Activity, Shield, Zap, Database, Globe, Bell, BookOpen, Search, Layers, Layout } from 'lucide-react';
 import { api } from '../../api';
 
 export default function ITDashboard() {
@@ -12,6 +8,9 @@ export default function ITDashboard() {
         total_lessons: 0, completed_lessons: 0, missed_lessons: 0,
         videos_sent: 0, videos_pending: 0, active_teachers: 0, total_classes: 0, total_subjects: 0
     });
+    const [weeklyStats, setWeeklyStats] = useState(null);
+    const [monthlyStats, setMonthlyStats] = useState(null);
+    const [teacherRanking, setTeacherRanking] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => { loadStats(); }, []);
@@ -19,10 +18,13 @@ export default function ITDashboard() {
     const loadStats = async () => {
         try {
             setLoading(true);
-            const [dashRes, classesRes, subjectsRes] = await Promise.allSettled([
+            const [dashRes, classesRes, subjectsRes, weekly, monthly, ranking] = await Promise.allSettled([
                 api.getAdminDashboard(),
                 api.getClasses(),
                 api.getSubjects(),
+                api.getWeeklyStats(),
+                api.getMonthlyStats(),
+                api.getTeacherRanking(),
             ]);
             const d = dashRes.status === 'fulfilled' ? dashRes.value : {};
             const classes = classesRes.status === 'fulfilled' ? classesRes.value : {};
@@ -41,6 +43,9 @@ export default function ITDashboard() {
                 total_classes: classes.results?.length || (Array.isArray(classes) ? classes.length : 0),
                 total_subjects: subjects.results?.length || (Array.isArray(subjects) ? subjects.length : 0)
             });
+            if (weekly.status === 'fulfilled') setWeeklyStats(weekly.value);
+            if (monthly.status === 'fulfilled') setMonthlyStats(monthly.value);
+            if (ranking.status === 'fulfilled') setTeacherRanking((ranking.value.results || ranking.value.ranking || []).slice(0, 5));
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
@@ -157,6 +162,65 @@ export default function ITDashboard() {
                         ))}
                     </div>
                     <button className="btn btn-primary" style={{ width: '100%', marginTop: 'auto', justifyContent: 'center' }}>To'liq Hisobot</button>
+                </div>
+            </div>
+
+            {/* Analytics Cards */}
+            {(weeklyStats || monthlyStats) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+                    {weeklyStats && (
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>📊 Haftalik Analitika</h3>
+                            <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                                <div className="flex-between"><span className="text-muted">Davomat:</span><span style={{ fontWeight: 600, color: 'var(--success)' }}>{weeklyStats.summary?.attendance_rate}%</span></div>
+                                <div className="flex-between"><span className="text-muted">Dars o'tish:</span><span style={{ fontWeight: 600, color: 'var(--primary)' }}>{weeklyStats.summary?.lesson_completion_rate}%</span></div>
+                                <div className="flex-between"><span className="text-muted">Jami darslar:</span><span>{weeklyStats.summary?.total_lessons}</span></div>
+                                <div className="flex-between"><span className="text-muted">Yakunlangan:</span><span style={{ color: 'var(--success)' }}>{weeklyStats.summary?.completed_lessons}</span></div>
+                            </div>
+                        </div>
+                    )}
+                    {monthlyStats && (
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>📈 Oylik Analitika</h3>
+                            <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                                <div className="flex-between"><span className="text-muted">Davomat:</span><span style={{ fontWeight: 600, color: 'var(--success)' }}>{monthlyStats.summary?.attendance_rate}%</span></div>
+                                <div className="flex-between"><span className="text-muted">Dars o'tish:</span><span style={{ fontWeight: 600, color: 'var(--primary)' }}>{monthlyStats.summary?.lesson_completion_rate}%</span></div>
+                                <div className="flex-between"><span className="text-muted">O'rtacha KPI:</span><span style={{ fontWeight: 600, color: 'var(--warning)' }}>{monthlyStats.summary?.avg_kpi_score ?? '—'}</span></div>
+                                <div className="flex-between"><span className="text-muted">Jami maosh:</span><span style={{ fontWeight: 600, color: 'var(--accent)' }}>{monthlyStats.summary?.total_salary_payout}</span></div>
+                            </div>
+                        </div>
+                    )}
+                    {teacherRanking.length > 0 && (
+                        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>🏆 Top 5 Reyting</h3>
+                            <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                                {teacherRanking.map((t, i) => (
+                                    <div key={t.teacher_id || i} className="flex-between" style={{ padding: '0.4rem 0', borderBottom: '1px solid var(--surface-border)' }}>
+                                        <span>#{t.rank || i + 1} {t.full_name || '—'}</span>
+                                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{t.kpi?.total_score ?? '—'} ball</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* IT Tools Quick Actions */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>🛠️ IT Texnik Vositalar</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+                    {[
+                        { label: 'Davomat tuzatish', action: async () => { const id = await prompt('Teacher ID:'); if (id) { await api.fixAttendance({ teacher_id: parseInt(id) }); alert('✅ Davomat tuzatildi'); } } },
+                        { label: 'Dars tuzatish', action: async () => { const id = await prompt('Lesson ID:'); if (id) { await api.fixLesson({ lesson_id: parseInt(id) }); alert('✅ Dars tuzatildi'); } } },
+                        { label: 'Maosh tuzatish', action: async () => { const id = await prompt('Salary Record ID:'); if (id) { await api.fixSalary({ salary_id: parseInt(id) }); alert('✅ Maosh tuzatildi'); } } },
+                        { label: 'KPI tuzatish', action: async () => { const id = await prompt('KPI Record ID:'); if (id) { await api.fixKPI({ kpi_id: parseInt(id) }); alert('✅ KPI tuzatildi'); } } },
+                        { label: 'Foydalanuvchi sifatida', action: async () => { const id = await prompt('User ID:'); if (id) { await api.actAs(parseInt(id)); alert('✅ Sessiya almashtirildi'); } } },
+                    ].map((tool, i) => (
+                        <button key={i} className="btn btn-outline" style={{ justifyContent: 'center', fontSize: '0.85rem' }} onClick={tool.action}>
+                            {tool.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 

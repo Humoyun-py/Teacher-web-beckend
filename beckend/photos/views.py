@@ -19,6 +19,7 @@ from .serializers import (
 )
 from accounts.permissions import IsAdmin, IsTeacher, IsAdminOrReadOnly
 from lessons.models import Lesson
+from teachers.models import Teacher
 
 class PhotoProofViewSet(viewsets.ModelViewSet):
     """
@@ -75,7 +76,7 @@ class PhotoProofViewSet(viewsets.ModelViewSet):
 
         try:
             teacher = request.user.teacher_profile
-        except Exception:
+        except Teacher.DoesNotExist:
             return Response(
                 {'error': 'Teacher profili topilmadi.'},
                 status=status.HTTP_400_BAD_REQUEST,

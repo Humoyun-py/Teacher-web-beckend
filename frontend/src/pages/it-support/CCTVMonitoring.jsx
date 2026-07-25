@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Maximize2, RefreshCw, Shield, Layout, Radio, AlertCircle, Eye, EyeOff, Zap, Activity, Plus, X, Play, Settings, Trash2, Edit } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Maximize2, Shield, Eye, EyeOff, Zap, Activity, Plus, X, Settings, Trash2, Edit } from 'lucide-react';
 import { api } from '../../api';
 
 // --- HLS Video Player Component ---
@@ -28,7 +28,7 @@ const HlsPlayer = ({ url, isActive }) => {
                 hls.loadSource(url);
                 hls.attachMedia(videoRef.current);
                 hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-                    videoRef.current.play().catch(e => console.log("Auto-play blocked"));
+                    videoRef.current.play().catch(() => {});
                 });
             } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
                 // Safari uchun native support

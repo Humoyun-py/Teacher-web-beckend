@@ -33,7 +33,7 @@ class SchoolClassSerializer(serializers.ModelSerializer):
         ]
 
     def get_teachers_count(self, obj):
-        return obj.teachers.count()
+        return obj.class_teachers.count()
 
 
 class TeacherSerializer(serializers.ModelSerializer):

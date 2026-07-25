@@ -131,7 +131,11 @@ export default function TeacherDashboard() {
     setActionLoading(lessonId + '-start');
     try {
       // 1. Upload photo proof (mandatory)
-      await api.uploadPhoto(lessonId, file, 'Dars boshlanishi isboti');
+      const formData = new FormData();
+      formData.append('lesson', lessonId);
+      formData.append('photo', file);
+      formData.append('description', 'Dars boshlanishi isboti');
+      await api.uploadPhoto(formData);
       
       // 2. Start the lesson
       await api.startLesson(lessonId);
@@ -164,7 +168,11 @@ export default function TeacherDashboard() {
     if (!file) return;
     setUploadingLesson(lessonId);
     try {
-      await api.uploadPhoto(lessonId, file, 'Dars jarayonida olingan rasm');
+      const formData = new FormData();
+    formData.append('lesson', lessonId);
+    formData.append('photo', file);
+    formData.append('description', 'Dars jarayonida olingan rasm');
+    await api.uploadPhoto(formData);
       await alert('✅ Rasm muvaffaqiyatli yuborildi!');
     } catch (err) {
       await alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
@@ -183,7 +191,7 @@ export default function TeacherDashboard() {
     );
   }
 
-  const activeLesson = todayLessons.find(l => l.status === 'in_progress');
+  // const activeLesson = todayLessons.find(l => l.status === 'in_progress');
   const nextLesson = dashboard?.next_lesson;
 
   return (
@@ -305,7 +313,7 @@ export default function TeacherDashboard() {
                   <div style={{ border: '2px solid var(--warning)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                     <Scanner
                       onScan={handleScanCode}
-                      onError={err => console.log(err)}
+                      onError={() => {}}
                       components={{ audio: false, finder: false }}
                     />
                   </div>
@@ -325,7 +333,7 @@ export default function TeacherDashboard() {
               <div style={{ border: '2px solid var(--primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                 <Scanner
                   onScan={handleScanCode}
-                  onError={err => console.log(err)}
+                  onError={() => {}}
                   components={{ audio: false, finder: false }}
                 />
               </div>

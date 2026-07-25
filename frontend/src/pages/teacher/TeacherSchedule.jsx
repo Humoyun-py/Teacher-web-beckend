@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, BookOpen, PlayCircle, StopCircle, Camera, Loader, CheckCircle, AlertCircle, MapPin, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Clock, BookOpen, PlayCircle, StopCircle, Camera, Loader, MapPin, Building2 } from 'lucide-react';
 import { api } from '../../api';
 
 const STATUS_LABELS = {
@@ -21,6 +21,8 @@ export default function TeacherSchedule() {
   const [actionLoading, setActionLoading] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [uploadingLesson, setUploadingLesson] = useState(null);
+  const [weeklySchedule, setWeeklySchedule] = useState([]);
+  const [showWeekly, setShowWeekly] = useState(false);
 
   const loadLessons = async () => {
     setLoading(true);
@@ -32,7 +34,17 @@ export default function TeacherSchedule() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadLessons(); }, [selectedDate]);
+  const loadWeeklySchedule = async () => {
+    setLoading(true);
+    try {
+      const res = await api.getWeeklySchedules();
+      setWeeklySchedule(res.results || res || []);
+    } catch (err) {
+      console.error('Haftalik jadvalni yuklashda xato:', err);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadLessons(); }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStartClick = (lessonId) => {
     const input = document.getElementById(`start-photo-${lessonId}`);
@@ -48,7 +60,11 @@ export default function TeacherSchedule() {
     setActionLoading(lessonId + '-start');
     try {
       // 1. Upload photo first
-      await api.uploadPhoto(lessonId, file, 'Dars boshlanishi isboti');
+      const formData = new FormData();
+      formData.append('lesson', lessonId);
+      formData.append('photo', file);
+      formData.append('description', 'Dars boshlanishi isboti');
+      await api.uploadPhoto(formData);
       
       // 2. Start lesson
       await api.startLesson(lessonId);
@@ -82,7 +98,11 @@ export default function TeacherSchedule() {
     if (!file) return;
     setUploadingLesson(lessonId);
     try {
-      await api.uploadPhoto(lessonId, file, 'Dars jarayonida olingan rasm');
+      const formData = new FormData();
+    formData.append('lesson', lessonId);
+    formData.append('photo', file);
+    formData.append('description', 'Dars jarayonida olingan rasm');
+    await api.uploadPhoto(formData);
       await alert('✅ Rasm muvaffaqiyatli yuborildi!');
     } catch (err) {
       await alert('Rasm yuborishda xatolik: ' + JSON.stringify(err.data || err.message));
@@ -102,6 +122,9 @@ export default function TeacherSchedule() {
           <p className="text-muted">Kunlik darslar — xona, etaj va vaqtlar bilan</p>
         </div>
         <div className="flex-center gap-3">
+          <button className={`btn ${showWeekly ? 'btn-primary' : 'btn-outline'}`} onClick={() => { setShowWeekly(!showWeekly); if (!showWeekly) loadWeeklySchedule(); }}>
+            📅 Haftalik jadval
+          </button>
           <input
             type="date"
             className="input-field"
@@ -111,6 +134,25 @@ export default function TeacherSchedule() {
           />
         </div>
       </div>
+
+      {/* Weekly Schedule View */}
+      {showWeekly && (
+        <div className="glass" style={{ padding: '1.25rem' }}>
+          <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>📅 Haftalik Jadval</h3>
+          {weeklySchedule.length === 0 ? (
+            <p className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Jadval topilmadi</p>
+          ) : (
+            <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+              {weeklySchedule.map((s, i) => (
+                <div key={s.id || i} className="flex-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--surface-border)' }}>
+                  <span>{s.subject_name || s.subject} — {s.class_name || s.school_class}</span>
+                  <span className="text-muted">{s.day_of_week_display || s.day_of_week} • {s.start_time?.slice(0,5)}-{s.end_time?.slice(0,5)} • {s.room || '—'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-center flex-col gap-4" style={{ flex: 1 }}>

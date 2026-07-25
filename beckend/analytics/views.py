@@ -88,7 +88,7 @@ class TeacherDashboardAnalytics(APIView):
         today = timezone.localtime().date()
         try:
             teacher = request.user.teacher_profile
-        except Exception:
+        except Teacher.DoesNotExist:
             return Response({'error': 'Teacher profile not found'}, status=400)
 
         today_lessons = Lesson.objects.filter(

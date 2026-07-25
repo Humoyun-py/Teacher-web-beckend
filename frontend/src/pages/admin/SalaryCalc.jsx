@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Calendar, Loader, Users, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DollarSign, Calendar, Loader, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { api } from '../../api';
 
 export default function SalaryCalc() {
@@ -10,6 +10,9 @@ export default function SalaryCalc() {
   const [teachersLoading, setTeachersLoading] = useState(true);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [_salaryRecords, _setSalaryRecords] = useState([]);
+  const [_salaryReportLoading, setSalaryReportLoading] = useState(false);
+  const [globalSalaryReport, setGlobalSalaryReport] = useState(null);
 
   useEffect(() => {
     api.getTeachers().then(res => {
@@ -41,6 +44,58 @@ export default function SalaryCalc() {
   const handleDateChange = (m, y) => {
     setMonth(m); setYear(y);
     if (selectedTeacher) fetchReport(selectedTeacher, m, y);
+    fetchGlobalSalaryReport(m, y);
+  };
+
+  const fetchGlobalSalaryReport = async (m, y) => {
+    setSalaryReportLoading(true);
+    try {
+      const res = await api.getSalaryReport(`?month=${m}&year=${y}`);
+      setGlobalSalaryReport(res);
+    } catch (err) {
+      console.error('Global salary report xato:', err);
+    } finally {
+      setSalaryReportLoading(false);
+    }
+  };
+
+  const handleCalculateSalary = async () => {
+    if (!window.confirm(`${monthNames[month-1]} ${year} uchun barcha o'qituvchilar maoshini hisoblashni tasdiqlaysizmi?`)) return;
+    try {
+      const res = await api.calculateSalary({ month, year });
+      alert('✅ ' + (res.message || 'Maosh hisoblandi'));
+      fetchGlobalSalaryReport(month, year);
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    }
+  };
+
+  const handleApproveSalary = async () => {
+    if (!globalSalaryReport?.results?.length) return alert('Avval maosh hisoblang');
+    if (!window.confirm('Barcha hisoblangan maoshlarni tasdiqlashni xohlaysizmi?')) return;
+    try {
+      for (const record of globalSalaryReport.results.slice(0, 10)) {
+        if (record.status === 'calculated') await api.approveSalary(record.id);
+      }
+      alert('✅ Maoshlar tasdiqlandi');
+      fetchGlobalSalaryReport(month, year);
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    }
+  };
+
+  const handlePaySalary = async () => {
+    if (!globalSalaryReport?.results?.length) return alert('Avval maosh hisoblang');
+    if (!window.confirm('Barcha tasdiqlangan maoshlarni to\'langan deb belgilashni xohlaysizmi?')) return;
+    try {
+      for (const record of globalSalaryReport.results.slice(0, 10)) {
+        if (record.status === 'approved') await api.paySalary(record.id);
+      }
+      alert('✅ Maoshlar to\'langan deb belgilandi');
+      fetchGlobalSalaryReport(month, year);
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    }
   };
 
   const fmt = (val) => {
@@ -52,9 +107,22 @@ export default function SalaryCalc() {
 
   return (
     <div className="flex-col gap-6 animate-fade-in" style={{ height: '100%' }}>
-      <div>
-        <h1 className="heading-2">💰 Oylik Hisoblash</h1>
-        <p className="text-muted">O'qituvchi oylik maoshini hisoblash (replace va jarimalar bilan)</p>
+      <div className="flex-between">
+        <div>
+          <h1 className="heading-2">💰 Oylik Hisoblash</h1>
+          <p className="text-muted">O'qituvchi oylik maoshini hisoblash (replace va jarimalar bilan)</p>
+        </div>
+        <div className="flex-center gap-2">
+          <button className="btn btn-primary" onClick={handleCalculateSalary}>
+            📊 Hisoblash
+          </button>
+          <button className="btn btn-warning" onClick={handleApproveSalary}>
+            ✓ Tasdiqlash
+          </button>
+          <button className="btn btn-success" onClick={handlePaySalary}>
+            💵 To'lash
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -105,6 +173,25 @@ export default function SalaryCalc() {
         </div>
       ) : report ? (
         <div className="flex-col gap-4">
+          {/* Global Salary Report Summary */}
+          {globalSalaryReport && (
+            <div className="glass" style={{ padding: '1.25rem' }}>
+              <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>📊 Umumiy Maosh Hisoboti</h3>
+              <div className="grid grid-cols-3" style={{ gap: '1rem' }}>
+                {[
+                  { label: 'Jami yozuvlar', value: globalSalaryReport.count || globalSalaryReport.results?.length || 0, color: 'var(--primary)' },
+                  { label: 'Hisoblangan', value: globalSalaryReport.results?.filter(r => r.status === 'calculated').length || 0, color: 'var(--warning)' },
+                  { label: 'Tasdiqlangan', value: globalSalaryReport.results?.filter(r => r.status === 'approved').length || 0, color: 'var(--success)' },
+                  { label: "To'langan", value: globalSalaryReport.results?.filter(r => r.status === 'paid').length || 0, color: 'var(--accent)' },
+                ].map((s, i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.label}</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Teacher info */}
           <div className="glass" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', overflow: 'hidden', flexShrink: 0 }}>

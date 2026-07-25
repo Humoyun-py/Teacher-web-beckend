@@ -1,8 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Search, User, Play, CheckSquare, Video, QrCode,
-    ShieldAlert, Calendar, Clock, ChevronRight, RefreshCcw, Command, UserCheck
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, User, QrCode, ShieldAlert, Calendar, Clock, ChevronRight, RefreshCcw, Command, UserCheck } from 'lucide-react';
 import { api } from '../../api';
 
 export default function TeacherControls() {
@@ -17,7 +14,7 @@ export default function TeacherControls() {
     useEffect(() => {
         if (selectedTeacher) loadTeacherLessons();
         else setTeacherLessons([]);
-    }, [selectedTeacher]);
+    }, [selectedTeacher]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loadTeachers = async () => {
         try {

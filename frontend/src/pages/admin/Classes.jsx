@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../../api';
-import { GraduationCap, Plus, Edit2, Trash2, Search, X, MapPin, Building2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, MapPin, Building2 } from 'lucide-react';
 
 export default function Classes() {
   const [classes, setClasses] = useState([]);

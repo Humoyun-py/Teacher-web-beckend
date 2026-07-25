@@ -80,7 +80,7 @@ class Teacher(SoftDeleteModel):
     )
     classes = models.ManyToManyField(
         SchoolClass, blank=True,
-        related_name='teachers',
+        related_name='class_teachers',
         verbose_name='Sinflar',
     )
     status = models.CharField(

@@ -1,24 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, BookOpen, CheckCircle, XCircle, Clock, Camera, Loader, RefreshCw, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BookOpen, CheckCircle, XCircle, Clock, Camera, Loader, RefreshCw } from 'lucide-react';
 import { api } from '../../api';
 
 export default function TeacherStats() {
   const [dashboard, setDashboard] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [kpiData, setKpiData] = useState(null);
+  const [ranking, setRanking] = useState(null);
+  const [_reports, setReports] = useState({ attendance: null, lesson: null });
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dash, att, ph] = await Promise.allSettled([
+      const now = new Date();
+      const [dash, att, ph, kpi, rank, attReport, lesReport] = await Promise.allSettled([
         api.getTeacherDashboard(),
         api.getAttendanceLogs('?ordering=-date'),
         api.getPhotos('?ordering=-created_at'),
+        api.getKPIRecords(`?month=${now.getMonth()+1}&year=${now.getFullYear()}`),
+        api.getKPIRanking(`?month=${now.getMonth()+1}&year=${now.getFullYear()}`),
+        api.getAttendanceReport(`?month=${now.getMonth()+1}&year=${now.getFullYear()}`),
+        api.getLessonReport(`?month=${now.getMonth()+1}&year=${now.getFullYear()}`),
       ]);
       if (dash.status === 'fulfilled') setDashboard(dash.value);
       if (att.status === 'fulfilled') setAttendance((att.value.results || []).slice(0, 10));
       if (ph.status === 'fulfilled') setPhotos((ph.value.results || []).slice(0, 8));
+      if (kpi.status === 'fulfilled') setKpiData(kpi.value.results?.[0] || kpi.value);
+      if (rank.status === 'fulfilled') setRanking(rank.value);
+      if (attReport.status === 'fulfilled') setReports(prev => ({ ...prev, attendance: attReport.value }));
+      if (lesReport.status === 'fulfilled') setReports(prev => ({ ...prev, lesson: lesReport.value }));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -73,6 +85,43 @@ export default function TeacherStats() {
           <RefreshCw size={15} /> Yangilash
         </button>
       </div>
+
+      {/* KPI Card */}
+      {kpiData && (
+        <div className="glass" style={{ padding: '1.25rem' }}>
+          <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>📊 KPI — {new Date().getMonth()+1}/{new Date().getFullYear()}</h3>
+          <div className="grid grid-cols-3" style={{ gap: '1rem' }}>
+            {[
+              { label: 'Umumiy ball', value: kpiData.total_score ?? '—', color: 'var(--primary)' },
+              { label: 'Baho', value: kpiData.grade ?? '—', color: 'var(--warning)' },
+              { label: 'Davomat', value: kpiData.attendance_score ?? '—', color: 'var(--success)' },
+              { label: 'Darslar', value: kpiData.lesson_score ?? '—', color: 'var(--accent)' },
+              { label: 'Rasm isbot', value: kpiData.proof_score ?? '—', color: 'var(--info)' },
+              { label: 'Kechikish', value: kpiData.late_arrival_score ?? '—', color: 'var(--danger)' },
+            ].map((k, i) => (
+              <div key={i} style={{ textAlign: 'center', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{k.label}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: k.color }}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ranking */}
+      {ranking?.ranking && (
+        <div className="glass" style={{ padding: '1.25rem' }}>
+          <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>🏆 Reyting</h3>
+          <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+            {ranking.ranking.slice(0, 5).map((t, i) => (
+              <div key={t.teacher_id || i} className="flex-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--surface-border)' }}>
+                <span>#{t.rank || i + 1} {t.full_name || '—'}</span>
+                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{t.kpi?.total_score ?? '—'} ball</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stat cards */}
       {statCards.length > 0 && (

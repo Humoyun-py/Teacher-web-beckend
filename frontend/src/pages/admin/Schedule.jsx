@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Plus, RefreshCw, Clock, X, Check, Loader, BookOpen, Users, MapPin, Building2 } from 'lucide-react';
 import { api } from '../../api';
 
@@ -64,6 +64,12 @@ export default function Schedule() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Konflikt tekshirish
+      const conflict = await api.checkScheduleConflict(form);
+      if (conflict.has_conflict) {
+        const ok = await window.confirm(`⚠️ Konflikt aniqlandi:\n${JSON.stringify(conflict.conflicts || {})}\n\nYaratishni davom ettirasizmi?`);
+        if (!ok) return setSubmitting(false);
+      }
       await api.createSchedule(form);
       setShowModal(false);
       setForm({ teacher: '', subject: '', school_class: '', day_of_week: 1, start_time: '08:00', end_time: '08:45', room: '' });
@@ -86,7 +92,7 @@ export default function Schedule() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await api.generateLessonsFromSchedule(genDate);
+      const res = await api.generateFromSchedule(genDate);
       alert(`✅ ${res.created_count || 0} ta dars yaratildi!`);
       setShowGenModal(false);
     } catch (err) {

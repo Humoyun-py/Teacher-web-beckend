@@ -24,6 +24,33 @@ export const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
   const response = await fetchWithRetry(`${BASE_URL}${endpoint}`, { ...options, headers });
+  // ── Avtomatik token refresh: 401 bo'lsa token yangilash ──
+  if (response.status === 401 && localStorage.getItem('refresh_token')) {
+    try {
+      const refreshRes = await fetch(`${BASE_URL}/auth/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        localStorage.setItem('access_token', refreshData.access_token || refreshData.access);
+        if (refreshData.refresh_token) localStorage.setItem('refresh_token', refreshData.refresh_token);
+        // Qayta so'rov yuborish
+        headers.Authorization = `Bearer ${refreshData.access_token || refreshData.access}`;
+        const retryResponse = await fetchWithRetry(`${BASE_URL}${endpoint}`, { ...options, headers });
+        if (retryResponse.status === 204) return {};
+        const retryData = await retryResponse.json().catch(() => ({}));
+        if (!retryResponse.ok) throw { status: retryResponse.status, data: retryData };
+        return retryData;
+      }
+    } catch (_e) {
+      // refresh xatolik — login sahifasiga yo'naltirish
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.href = '/';
+    }
+  }
   if (response.status === 204) return {};
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw { status: response.status, data };
@@ -161,6 +188,11 @@ export const api = {
   // NOTIFICATIONS — /api/v1/notifications/
   // ═══════════════════════════════════════════════════════════════════════════
   getNotifications: () => request('/notifications/'),
+  getNotification: (id) => request(`/notifications/${id}/`),
+  createNotification: (d) => request('/notifications/', { method: 'POST', body: JSON.stringify(d) }),
+  updateNotification: (id, d) => request(`/notifications/${id}/`, { method: 'PUT', body: JSON.stringify(d) }),
+  patchNotification: (id, d) => request(`/notifications/${id}/`, { method: 'PATCH', body: JSON.stringify(d) }),
+  deleteNotification: (id) => request(`/notifications/${id}/`, { method: 'DELETE' }),
   getUnreadCount: () => request('/notifications/unread_count/'),
   markAsRead: (ids) => request('/notifications/mark_as_read/', { method: 'POST', body: JSON.stringify({ notification_ids: ids }) }),
   markAllRead: () => request('/notifications/mark_all_read/', { method: 'POST' }),
@@ -185,6 +217,10 @@ export const api = {
   // ═══════════════════════════════════════════════════════════════════════════
   getKPIRecords: (p = '') => request(`/kpi/${p}`),
   getKPIRecord: (id) => request(`/kpi/${id}/`),
+  createKPIRecord: (d) => request('/kpi/', { method: 'POST', body: JSON.stringify(d) }),
+  updateKPIRecord: (id, d) => request(`/kpi/${id}/`, { method: 'PUT', body: JSON.stringify(d) }),
+  patchKPIRecord: (id, d) => request(`/kpi/${id}/`, { method: 'PATCH', body: JSON.stringify(d) }),
+  deleteKPIRecord: (id) => request(`/kpi/${id}/`, { method: 'DELETE' }),
   calculateKPI: (d) => request('/kpi/calculate/', { method: 'POST', body: JSON.stringify(d) }),
   getKPIRanking: (p = '') => request(`/kpi/ranking/${p}`),
 
@@ -193,6 +229,10 @@ export const api = {
   // ═══════════════════════════════════════════════════════════════════════════
   getSalaryRecords: (p = '') => request(`/salary/${p}`),
   getSalaryRecord: (id) => request(`/salary/${id}/`),
+  createSalaryRecord: (d) => request('/salary/', { method: 'POST', body: JSON.stringify(d) }),
+  updateSalaryRecord: (id, d) => request(`/salary/${id}/`, { method: 'PUT', body: JSON.stringify(d) }),
+  patchSalaryRecord: (id, d) => request(`/salary/${id}/`, { method: 'PATCH', body: JSON.stringify(d) }),
+  deleteSalaryRecord: (id) => request(`/salary/${id}/`, { method: 'DELETE' }),
   calculateSalary: (d) => request('/salary/calculate/', { method: 'POST', body: JSON.stringify(d) }),
   approveSalary: (id) => request(`/salary/${id}/approve/`, { method: 'POST' }),
   paySalary: (id) => request(`/salary/${id}/pay/`, { method: 'POST' }),

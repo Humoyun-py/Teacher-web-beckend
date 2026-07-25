@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, Search, RefreshCcw, Edit2, X, Check, Clock, Edit } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Activity, Search, RefreshCcw, Edit2, X, Clock } from 'lucide-react';
 import { api } from '../../api';
 
 const ATT_STATUS = {

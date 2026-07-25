@@ -46,15 +46,15 @@ class AuditLogMiddleware(MiddlewareMixin):
                             for key in req_data.keys():
                                 if 'password' in key.lower():
                                     req_data[key] = '******'
-                    except Exception:
+                    except (json.JSONDecodeError, UnicodeDecodeError):
                         pass
-                
+
                 # Try parsing response body safely
                 resp_data = None
                 if response.status_code in (200, 201) and response.get('Content-Type') == 'application/json':
                     try:
                         resp_data = json.loads(response.content.decode('utf-8'))
-                    except Exception:
+                    except (json.JSONDecodeError, UnicodeDecodeError):
                         pass
 
                 # Create Audit Log record

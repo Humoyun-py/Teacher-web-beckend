@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, Check, X, Eye, Loader, RefreshCw, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Camera, Check, X, Eye, Loader, RefreshCw } from 'lucide-react';
 import { api } from '../../api';
 
 const STATUS_LABELS = { pending: 'Kutilmoqda', accepted: 'Qabul qilindi', rejected: 'Rad etildi' };
@@ -12,18 +12,30 @@ export default function VideoReviewList() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [reviewing, setReviewing] = useState(null); // photo id being reviewed
   const [reviewNote, setReviewNote] = useState('');
+  const [photoStats, setPhotoStats] = useState(null);
+  const [missingPhotos, setMissingPhotos] = useState([]);
+  const [missingByTeacher, setMissingByTeacher] = useState([]);
+  const [showMissing, setShowMissing] = useState(false);
 
   const loadPhotos = async (status = filter) => {
     setLoading(true);
     try {
-      const res = await api.getPhotos(`?status=${status}&ordering=-created_at`);
-      setPhotos(res.results || []);
+      const [photosRes, statsRes, missingRes, missingTeacherRes] = await Promise.allSettled([
+        api.getPhotos(`?status=${status}&ordering=-created_at`),
+        api.getPhotoStats(),
+        api.getMissingPhotos(),
+        api.getMissingByTeacher(),
+      ]);
+      if (photosRes.status === 'fulfilled') setPhotos(photosRes.value.results || []);
+      if (statsRes.status === 'fulfilled') setPhotoStats(statsRes.value);
+      if (missingRes.status === 'fulfilled') setMissingPhotos(missingRes.value.lessons_without_photo || []);
+      if (missingTeacherRes.status === 'fulfilled') setMissingByTeacher(missingTeacherRes.value.report || []);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadPhotos(filter); }, [filter]);
+  useEffect(() => { loadPhotos(filter); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = async (id, status) => {
     try {
@@ -40,18 +52,38 @@ export default function VideoReviewList() {
     <div className="flex-col gap-6 animate-fade-in" style={{ height: '100%' }}>
 
       {/* Header */}
+      {/* Stats summary */}
+      {photoStats && (
+        <div className="grid grid-cols-4" style={{ gap: '1rem' }}>
+          {[
+            { label: 'Jami', value: photoStats.total, color: 'var(--primary)', bg: 'rgba(99,102,241,0.1)' },
+            { label: 'Kutilmoqda', value: photoStats.pending, color: 'var(--warning)', bg: 'rgba(234,179,8,0.1)' },
+            { label: 'Qabul', value: photoStats.accepted, color: 'var(--success)', bg: 'rgba(34,197,94,0.1)' },
+            { label: 'Rad', value: photoStats.rejected, color: 'var(--danger)', bg: 'rgba(239,68,68,0.1)' },
+          ].map((s, i) => (
+            <div key={i} className="glass" style={{ padding: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.label}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 700, color: s.color }}>{s.value ?? 0}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex-between">
         <div>
           <h1 className="heading-2">Rasm Tekshiruv</h1>
           <p className="text-muted">O'qituvchilar tomonidan yuborilgan dars rasmlari</p>
         </div>
         <div className="flex-center gap-3">
+          <button className={`btn ${showMissing ? 'btn-primary' : 'btn-outline'}`} onClick={() => setShowMissing(!showMissing)} style={{ fontSize: '0.85rem' }}>
+            📷 Yetishmovchilik
+          </button>
           {/* Filter buttons */}
           {['pending', 'accepted', 'rejected'].map(s => (
             <button
               key={s}
               className={`btn ${filter === s ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setFilter(s)}
+              onClick={() => { setFilter(s); setShowMissing(false); }}
               style={{ fontSize: '0.85rem' }}
             >
               {STATUS_LABELS[s]}
@@ -62,6 +94,38 @@ export default function VideoReviewList() {
           </button>
         </div>
       </div>
+
+      {/* Missing Photos / Missing By Teacher */}
+      {showMissing && (
+        <div className="flex-col gap-4">
+          {missingPhotos.length > 0 && (
+            <div className="glass" style={{ padding: '1.25rem' }}>
+              <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>📷 Rasmsiz darslar</h3>
+              <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                {missingPhotos.map((lesson, i) => (
+                  <div key={lesson.id || i} className="flex-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--surface-border)' }}>
+                    <span>{lesson.subject_name || lesson.subject} — {lesson.class_name || lesson.school_class}</span>
+                    <span className="text-muted">{lesson.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {missingByTeacher.length > 0 && (
+            <div className="glass" style={{ padding: '1.25rem' }}>
+              <h3 className="heading-3" style={{ fontSize: '1rem', marginBottom: '1rem' }}>👨‍🏫 O'qituvchilar bo'yicha yetishmovchilik</h3>
+              <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                {missingByTeacher.map((t, i) => (
+                  <div key={t.teacher_id || i} className="flex-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--surface-border)' }}>
+                    <span>{t.full_name || '—'}</span>
+                    <span style={{ color: 'var(--danger)' }}>{t.missing_proofs} ta rasmsiz</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-center flex-col gap-4" style={{ flex: 1 }}>

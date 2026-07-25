@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import {
-    History, Search, Filter, Download, User,
-    Settings, Edit, Trash2, CheckCircle, Info, RefreshCcw
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { History, Search, Download, RefreshCcw } from 'lucide-react';
 import { api } from '../../api';
 
 export default function AuditLogs() {
     const [search, setSearch] = useState('');
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [selectedLog, setSelectedLog] = useState(null);
 
     useEffect(() => {
         loadLogs();
@@ -108,6 +106,14 @@ export default function AuditLogs() {
                                         <span className="text-muted" style={{ fontSize: '0.75rem' }}>• {log.time}</span>
                                     </div>
                                 </div>
+                                <button className="btn btn-ghost btn-sm text-primary" onClick={async () => {
+                                    try {
+                                        const detail = await api.getAuditLogDetail(log.id);
+                                        setSelectedLog(detail);
+                                    } catch (_e) { alert('Xatolik'); }
+                                }}>
+                                    Batafsil
+                                </button>
                             </div>
                         ))
                     ) : (
@@ -115,6 +121,25 @@ export default function AuditLogs() {
                     )}
                 </div>
             </div>
+
+            {/* Detail Modal */}
+            {selectedLog && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedLog(null)}>
+                    <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: 'var(--radius-lg)' }} onClick={e => e.stopPropagation()}>
+                        <h3 className="heading-3" style={{ marginBottom: '1rem' }}>Audit Log Batafsil</h3>
+                        <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                            <div className="flex-between"><span className="text-muted">ID:</span><span>{selectedLog.id}</span></div>
+                            <div className="flex-between"><span className="text-muted">Foydalanuvchi:</span><span>{selectedLog.user_name || selectedLog.user?.username || '—'}</span></div>
+                            <div className="flex-between"><span className="text-muted">Amal:</span><span>{selectedLog.action_display || selectedLog.action}</span></div>
+                            <div className="flex-between"><span className="text-muted">Model:</span><span>{selectedLog.target_model || '—'}</span></div>
+                            <div className="flex-between"><span className="text-muted">Tavsif:</span><span>{selectedLog.description || '—'}</span></div>
+                            <div className="flex-between"><span className="text-muted">IP:</span><span>{selectedLog.ip_address || '—'}</span></div>
+                            <div className="flex-between"><span className="text-muted">Vaqt:</span><span>{selectedLog.created_at ? new Date(selectedLog.created_at).toLocaleString('uz-UZ') : '—'}</span></div>
+                        </div>
+                        <button className="btn btn-primary w-full" style={{ marginTop: '1.5rem' }} onClick={() => setSelectedLog(null)}>Yopish</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

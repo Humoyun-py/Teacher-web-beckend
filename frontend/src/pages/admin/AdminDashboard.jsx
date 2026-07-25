@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, UserCheck, UserX, Clock, Camera, TrendingUp, RefreshCw, BookOpen, AlertTriangle, CheckCircle, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, UserCheck, UserX, Clock, Camera, RefreshCw, BookOpen, AlertTriangle, CheckCircle, Loader } from 'lucide-react';
 import { api } from '../../api';
 
 export default function AdminDashboard() {
@@ -9,19 +9,28 @@ export default function AdminDashboard() {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [weeklyStats, setWeeklyStats] = useState(null);
+  const [monthlyStats, setMonthlyStats] = useState(null);
+  const [teacherRanking, setTeacherRanking] = useState([]);
 
   const loadData = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const [dashboard, pendingPhotos, logs] = await Promise.allSettled([
+      const [dashboard, pendingPhotos, logs, weekly, monthly, ranking] = await Promise.allSettled([
         api.getAdminDashboard(),
         api.getPendingPhotos(),
         api.getAttendanceLogs('?ordering=-check_in_time'),
+        api.getWeeklyStats(),
+        api.getMonthlyStats(),
+        api.getTeacherRanking(),
       ]);
 
       if (dashboard.status === 'fulfilled') setStats(dashboard.value);
       if (pendingPhotos.status === 'fulfilled') setPhotos((pendingPhotos.value.results || []).slice(0, 6));
       if (logs.status === 'fulfilled') setRecentLogs((logs.value.results || []).slice(0, 6));
+      if (weekly.status === 'fulfilled') setWeeklyStats(weekly.value);
+      if (monthly.status === 'fulfilled') setMonthlyStats(monthly.value);
+      if (ranking.status === 'fulfilled') setTeacherRanking((ranking.value.results || ranking.value.ranking || []).slice(0, 5));
     } catch (e) {
       console.error(e);
     } finally {
@@ -110,6 +119,52 @@ export default function AdminDashboard() {
           )
         )}
       </div>
+
+      {/* Weekly / Monthly Summary */}
+      {(weeklyStats || monthlyStats) && (
+        <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>
+          {weeklyStats && (
+            <div className="glass" style={{ padding: '1.5rem' }}>
+              <h3 className="heading-3" style={{ fontSize: '1.05rem', marginBottom: '1rem' }}>Haftalik Xulosa</h3>
+              <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                <div className="flex-between"><span className="text-muted">Davomat darajasi:</span><span style={{ fontWeight: 600, color: 'var(--success)' }}>{weeklyStats.summary?.attendance_rate}%</span></div>
+                <div className="flex-between"><span className="text-muted">Dars o'tish darajasi:</span><span style={{ fontWeight: 600, color: 'var(--primary)' }}>{weeklyStats.summary?.lesson_completion_rate}%</span></div>
+                <div className="flex-between"><span className="text-muted">Jami darslar:</span><span>{weeklyStats.summary?.total_lessons}</span></div>
+                <div className="flex-between"><span className="text-muted">Yakunlangan:</span><span style={{ color: 'var(--success)' }}>{weeklyStats.summary?.completed_lessons}</span></div>
+              </div>
+            </div>
+          )}
+          {monthlyStats && (
+            <div className="glass" style={{ padding: '1.5rem' }}>
+              <h3 className="heading-3" style={{ fontSize: '1.05rem', marginBottom: '1rem' }}>Oylik Xulosa ({monthlyStats.month}/{monthlyStats.year})</h3>
+              <div className="flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                <div className="flex-between"><span className="text-muted">Davomat darajasi:</span><span style={{ fontWeight: 600, color: 'var(--success)' }}>{monthlyStats.summary?.attendance_rate}%</span></div>
+                <div className="flex-between"><span className="text-muted">Dars o'tish darajasi:</span><span style={{ fontWeight: 600, color: 'var(--primary)' }}>{monthlyStats.summary?.lesson_completion_rate}%</span></div>
+                <div className="flex-between"><span className="text-muted">O'rtacha KPI:</span><span style={{ fontWeight: 600, color: 'var(--warning)' }}>{monthlyStats.summary?.avg_kpi_score ?? '—'}</span></div>
+                <div className="flex-between"><span className="text-muted">Jami maosh to'lovi:</span><span style={{ fontWeight: 600, color: 'var(--accent)' }}>{monthlyStats.summary?.total_salary_payout}</span></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Teacher Ranking Top 5 */}
+      {teacherRanking.length > 0 && (
+        <div className="glass" style={{ padding: '1.5rem' }}>
+          <h3 className="heading-3" style={{ fontSize: '1.05rem', marginBottom: '1.25rem' }}>🏆 O'qituvchilar Reytingi (Top 5)</h3>
+          <div className="flex-col gap-2">
+            {teacherRanking.map((t, i) => (
+              <div key={t.teacher_id || i} className="flex-between" style={{ padding: '0.6rem 0', borderBottom: '1px solid var(--surface-border)', fontSize: '0.85rem' }}>
+                <div className="flex-center gap-3">
+                  <span style={{ fontWeight: 700, color: i < 3 ? 'var(--warning)' : 'var(--text-muted)', width: '24px' }}>#{t.rank || i + 1}</span>
+                  <span>{t.full_name || '—'}</span>
+                </div>
+                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{t.kpi?.total_score ?? '—'} ball</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Lists */}
       <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, CheckCheck, Loader, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, CheckCheck, Loader, RefreshCw, X } from 'lucide-react';
 import { api } from '../../api';
 
 export default function Notifications() {
@@ -7,6 +7,9 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
   const [marking, setMarking] = useState(false);
+  const [showSendForm, setShowSendForm] = useState(false);
+  const [sendForm, setSendForm] = useState({ title: '', message: '', recipient_type: 'all', recipient_ids: [] });
+  const [sending, setSending] = useState(false);
 
   const loadNotifications = async () => {
     setLoading(true);
@@ -53,9 +56,23 @@ export default function Notifications() {
     } catch (err) { console.error(err); }
   };
 
+  const handleSendNotification = async () => {
+    if (!sendForm.title || !sendForm.message) return alert('Sarlavha va xabar matnini kiriting');
+    setSending(true);
+    try {
+      await api.sendNotification(sendForm);
+      alert('✅ Xabar yuborildi');
+      setShowSendForm(false);
+      setSendForm({ title: '', message: '', recipient_type: 'all', recipient_ids: [] });
+      loadNotifications();
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    } finally { setSending(false); }
+  };
+
   return (
     <div className="flex-col gap-6 animate-fade-in" style={{ height: '100%' }}>
-      <div className="flex-between">
+        <div className="flex-between">
         <div>
           <h1 className="heading-2">Bildirishnomalar</h1>
           <p className="text-muted">
@@ -63,6 +80,9 @@ export default function Notifications() {
           </p>
         </div>
         <div className="flex-center gap-3">
+          <button className="btn btn-primary" onClick={() => setShowSendForm(true)}>
+            📤 Yuborish
+          </button>
           {unread > 0 && (
             <button className="btn btn-primary" onClick={handleMarkAll} disabled={marking}>
               {marking ? <Loader size={15} className="spinner" /> : <CheckCheck size={15} />}
@@ -74,6 +94,30 @@ export default function Notifications() {
           </button>
         </div>
       </div>
+
+      {/* Send Notification Modal */}
+      {showSendForm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass" style={{ width: '100%', maxWidth: '420px', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
+            <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+              <h2 className="heading-3">Yangi Xabar Yuborish</h2>
+              <button onClick={() => setShowSendForm(false)} style={{ background: 'transparent', color: 'var(--text-muted)' }}><X size={20} /></button>
+            </div>
+            <div className="flex-col gap-3">
+              <input type="text" className="input-field" placeholder="Sarlavha..." value={sendForm.title} onChange={e => setSendForm({ ...sendForm, title: e.target.value })} />
+              <textarea className="input-field" placeholder="Xabar matni..." value={sendForm.message} onChange={e => setSendForm({ ...sendForm, message: e.target.value })} style={{ minHeight: '100px', resize: 'vertical' }} />
+              <select className="input-field" value={sendForm.recipient_type} onChange={e => setSendForm({ ...sendForm, recipient_type: e.target.value })}>
+                <option value="all">Barcha foydalanuvchilar</option>
+                <option value="teachers">Faqat o'qituvchilar</option>
+                <option value="admins">Faqat adminlar</option>
+              </select>
+              <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleSendNotification} disabled={sending}>
+                {sending ? <Loader size={15} className="spinner" /> : '📤 Yuborish'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="glass" style={{ padding: '1.5rem', flex: 1 }}>
         {loading ? (

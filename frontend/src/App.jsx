@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AlertTriangle, HelpCircle, Check, X, CheckCircle } from 'lucide-react';
 
@@ -26,7 +26,7 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TeacherSchedule from './pages/teacher/TeacherSchedule';
 import TeacherStats from './pages/teacher/TeacherStats';
 import MyReplacements from './pages/teacher/MyReplacements';
-import Notifications2 from './pages/admin/Notifications';
+
 
 // IT Support pages
 import ITDashboard from './pages/it-support/ITDashboard';
@@ -155,6 +155,7 @@ function App() {
             <Route path="replacements" element={<Replacements />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="kpi" element={<TeacherStats />} />
           </Route>
 
           {/* ── Teacher Routes ── */}
@@ -164,7 +165,7 @@ function App() {
             <Route path="qr-scan" element={<TeacherDashboard />} />
             <Route path="stats" element={<TeacherStats />} />
             <Route path="replacements" element={<MyReplacements />} />
-            <Route path="notifications" element={<Notifications2 />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
 
           {/* ── IT Support Routes ── */}

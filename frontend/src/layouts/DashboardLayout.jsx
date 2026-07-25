@@ -1,10 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard, Users, Calendar, QrCode, Camera,
-  Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library,
-  DollarSign, ArrowRightLeft, Shield
-} from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, QrCode, Camera, Settings, LogOut, Menu, ChevronRight, Bell, BookOpen, BarChart3, AlertTriangle, GraduationCap, Library, DollarSign, ArrowRightLeft, Shield, KeyRound, UserCog } from 'lucide-react';
 import { api } from '../api';
 
 export default function DashboardLayout({ role }) {
@@ -15,6 +11,10 @@ export default function DashboardLayout({ role }) {
   const navigate = useNavigate();
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [commandSearch, setCommandSearch] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({ first_name: '', last_name: '', phone: '' });
+  const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const normalizeRole = (value) =>
     String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
@@ -64,7 +64,7 @@ export default function DashboardLayout({ role }) {
       return;
     }
 
-    let parsedUser = null;
+    let parsedUser;
     try {
       parsedUser = JSON.parse(userStr);
     } catch (e) {
@@ -120,7 +120,7 @@ export default function DashboardLayout({ role }) {
         }
       })
       .catch(() => { });
-  }, []);
+  }, [navigate, role]);
 
   const adminMenu = [
     { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
@@ -132,6 +132,7 @@ export default function DashboardLayout({ role }) {
     { name: 'QR Nazorat', path: '/admin/qr-checkin', icon: <QrCode size={20} /> },
     { name: 'Rasm Tekshiruv', path: '/admin/video-review', icon: <Camera size={20} /> },
     { name: 'Oylik Hisoblash', path: '/admin/salary-calc', icon: <DollarSign size={20} /> },
+    { name: 'KPI & Reyting', path: '/admin/kpi', icon: <BarChart3 size={20} /> },
     { name: "O'rinbosarlar", path: '/admin/replacements', icon: <ArrowRightLeft size={20} /> },
     {
       name: 'Bildirishnomalar', path: '/admin/notifications', icon: <Bell size={20} />,
@@ -196,6 +197,37 @@ export default function DashboardLayout({ role }) {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     navigate('/');
+  };
+
+  const openProfile = () => {
+    if (user) {
+      setProfileForm({ first_name: user.first_name || '', last_name: user.last_name || '', phone: user.phone || '' });
+    }
+    setShowProfileModal(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    setProfileSaving(true);
+    try {
+      const res = await api.updateProfile(profileForm);
+      const updated = { ...user, ...res };
+      localStorage.setItem('user', JSON.stringify(updated));
+      setUser(updated);
+      alert('✅ Profil yangilandi');
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    } finally { setProfileSaving(false); }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.new_password !== passwordForm.confirm_password) return alert('Yangi parollar mos kelmadi');
+    try {
+      await api.changePassword({ old_password: passwordForm.old_password, new_password: passwordForm.new_password });
+      alert('✅ Parol muvaffaqiyatli o\'zgartirildi');
+      setPasswordForm({ old_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      alert('Xatolik: ' + JSON.stringify(err.data || err.message));
+    }
   };
 
   return (
@@ -359,7 +391,7 @@ export default function DashboardLayout({ role }) {
         {/* User + Logout */}
         <div style={{ padding: '0.75rem', borderTop: '1px solid var(--surface-border)' }}>
           {isSidebarOpen && user && (
-            <div className="flex-center gap-2" style={{ padding: '0.5rem 0.75rem', marginBottom: '0.5rem' }}>
+            <div className="flex-center gap-2" style={{ padding: '0.5rem 0.75rem', marginBottom: '0.5rem', cursor: 'pointer' }} onClick={openProfile} title="Profil sozlamalari">
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
                 <img
                   src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name || user.username || 'U')}&background=6366f1&color=fff`}
@@ -426,7 +458,7 @@ export default function DashboardLayout({ role }) {
 
             {/* User info */}
             {user && (
-              <div className="flex-center gap-2">
+              <div className="flex-center gap-2" onClick={openProfile} style={{ cursor: 'pointer' }} title="Profil sozlamalari">
                 <div style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
                   <img
                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name || user.username || 'U')}&background=6366f1&color=fff`}
@@ -452,6 +484,40 @@ export default function DashboardLayout({ role }) {
           {user ? <Outlet /> : null}
         </div>
       </main>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowProfileModal(false)}>
+          <div className="glass" style={{ width: '100%', maxWidth: '420px', padding: '2rem', borderRadius: 'var(--radius-lg)' }} onClick={e => e.stopPropagation()}>
+            <h2 className="heading-3" style={{ marginBottom: '1.5rem' }}>Profil Sozlamalari</h2>
+            <div className="flex-col gap-3">
+              <div className="flex-col gap-1">
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ism</label>
+                <input className="input-field" value={profileForm.first_name} onChange={e => setProfileForm({ ...profileForm, first_name: e.target.value })} />
+              </div>
+              <div className="flex-col gap-1">
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Familiya</label>
+                <input className="input-field" value={profileForm.last_name} onChange={e => setProfileForm({ ...profileForm, last_name: e.target.value })} />
+              </div>
+              <div className="flex-col gap-1">
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Telefon</label>
+                <input className="input-field" value={profileForm.phone} onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })} />
+              </div>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} onClick={handleUpdateProfile} disabled={profileSaving}>
+                <UserCog size={15} /> {profileSaving ? 'Saqlanmoqda...' : 'Profilni yangilash'}
+              </button>
+              <hr style={{ border: 'none', borderTop: '1px solid var(--surface-border)', margin: '1rem 0' }} />
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Parolni o'zgartirish</h4>
+              <input type="password" className="input-field" placeholder="Joriy parol" value={passwordForm.old_password} onChange={e => setPasswordForm({ ...passwordForm, old_password: e.target.value })} />
+              <input type="password" className="input-field" placeholder="Yangi parol" value={passwordForm.new_password} onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })} />
+              <input type="password" className="input-field" placeholder="Yangi parolni tasdiqlash" value={passwordForm.confirm_password} onChange={e => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })} />
+              <button className="btn btn-warning" style={{ width: '100%' }} onClick={handleChangePassword}>
+                <KeyRound size={15} /> Parolni o'zgartirish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

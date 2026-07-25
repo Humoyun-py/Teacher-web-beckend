@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Bell, Shield, MapPin, Plus, Trash2, Edit2, RefreshCw, X, HelpCircle, Layers } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, Plus, Trash2, Edit2, RefreshCw, X, HelpCircle } from 'lucide-react';
 import { api } from '../../api';
 
 export default function Settings() {

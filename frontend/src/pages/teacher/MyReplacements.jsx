@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Plus, X, Loader, ArrowRightLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, X, Loader, ArrowRightLeft } from 'lucide-react';
 import { api } from '../../api';
 
 export default function MyReplacements() {
