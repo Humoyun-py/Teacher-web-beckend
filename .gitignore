@@ -7,8 +7,7 @@ beckend/staticfiles/
 beckend/.env
 beckend/.idea/
 beckend/.vscode/
-beckend/db.sqlite3
-beckend/*.sqlite3
+
 
 # Frontend
 frontend/node_modules/

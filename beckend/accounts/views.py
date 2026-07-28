@@ -111,11 +111,17 @@ class LoginView(APIView):
         access_token = generate_access_token(user)
         refresh_token = generate_refresh_token(user)
 
-        AuditLog.log(
-            user=user, action='login',
-            description=f"{user.get_full_name()} tizimga kirdi",
-            ip_address=request.META.get('REMOTE_ADDR'),
-        )
+        try:
+            AuditLog.log(
+                user=user, action='login',
+                description=f"{user.get_full_name()} tizimga kirdi",
+                ip_address=request.META.get('REMOTE_ADDR'),
+            )
+        except Exception as e:
+            # Audit log xatoligini e'tiborsiz qoldirish — login jarayonini to'xtatmaslik uchun
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"AuditLog login yozishda xatolik: {e}")
 
         return Response({
             'access_token': access_token,
