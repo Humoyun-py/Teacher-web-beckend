@@ -55,13 +55,16 @@ export default function TeacherManagement() {
                 await api.createTeacher(teacherData);
                 await loadAll();
                 setShowDrawer(false);
+                alert('✅ O\'qituvchi muvaffaqiyatli yaratildi!');
             } else if (drawerMode === 'edit') {
                 await api.updateTeacher(selectedTeacher.id, { first_name: formData.first_name, last_name: formData.last_name, username: formData.username, is_active: formData.is_active });
                 await loadAll();
                 setShowDrawer(false);
+                alert('✅ O\'qituvchi ma\'lumotlari yangilandi!');
             } else if (drawerMode === 'password') {
                 await api.patchTeacher(selectedTeacher.id, { password: formData.password });
                 setShowDrawer(false);
+                alert('✅ Parol muvaffaqiyatli o\'zgartirildi!');
             } else if (drawerMode === 'assign') {
                 await Promise.all([
                     formData.subject_ids.length > 0 && api.assignSubjectsToTeacher(selectedTeacher.id, formData.subject_ids),
@@ -69,8 +72,16 @@ export default function TeacherManagement() {
                 ]);
                 await loadAll();
                 setShowDrawer(false);
+                alert('✅ Fan va sinflar biriktirildi!');
             }
-        } catch (e) { alert('Xatolik: ' + (e.data?.detail || JSON.stringify(e.data) || 'Noma\'lum xato')); }
+        } catch (e) {
+            console.error('Xatolik:', e);
+            if (e?.status === 500) {
+                alert("❌ Tizimda xatolik yuz berdi. Bu login yoki ID avval foydalanilgan bo'lishi mumkin. Boshqa ma'lumot kiritib ko'ring.");
+            } else {
+                alert('❌ Xatolik: ' + (e.data?.detail || JSON.stringify(e.data) || 'Noma\'lum xato'));
+            }
+        }
         finally { setSaving(false); }
     };
 

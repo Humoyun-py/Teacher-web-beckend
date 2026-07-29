@@ -63,11 +63,13 @@ export default function TeachersList() {
         if (!updateData.password) delete updateData.password;
         if (updateData.monthly_salary === '') delete updateData.monthly_salary;
         await api.patchTeacher(editingTeacher.id, updateData);
+        alert('✅ O\'qituvchi muvaffaqiyatli yangilandi!');
       } else {
         const createData = { ...newTeacher };
         if (createData.monthly_salary === '') delete createData.monthly_salary;
         const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
         await api.createTeacher({ ...createData, employee_id });
+        alert('✅ O\'qituvchi muvaffaqiyatli yaratildi!');
       }
       setShowModal(false);
       setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
@@ -75,10 +77,14 @@ export default function TeachersList() {
       await loadTeachers();
     } catch (err) {
       console.error('Teacher saqlashda xato:', err);
-      const errMsg = err?.data
-        ? Object.entries(err.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
-        : (err?.message || 'Noma\'lum xatolik');
-      alert("❌ Xatolik:\n" + errMsg);
+      if (err?.status === 500) {
+        alert("❌ Tizimda xatolik yuz berdi. Iltimos, qayta urinib ko'ring yoki boshqa login ishlating.");
+      } else {
+        const errMsg = err?.data
+          ? Object.entries(err.data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n')
+          : (err?.message || 'Noma\'lum xatolik');
+        alert("❌ Xatolik:\n" + errMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
