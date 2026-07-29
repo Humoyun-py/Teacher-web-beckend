@@ -64,8 +64,10 @@ export default function TeachersList() {
         if (updateData.monthly_salary === '') delete updateData.monthly_salary;
         await api.patchTeacher(editingTeacher.id, updateData);
       } else {
+        const createData = { ...newTeacher };
+        if (createData.monthly_salary === '') delete createData.monthly_salary;
         const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
-        await api.createTeacher({ ...newTeacher, employee_id });
+        await api.createTeacher({ ...createData, employee_id });
       }
       setShowModal(false);
       setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });

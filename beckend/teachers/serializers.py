@@ -67,7 +67,8 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(write_only=True, required=False)
     first_name = serializers.CharField(write_only=True)
     last_name = serializers.CharField(write_only=True)
-    phone = serializers.CharField(write_only=True, required=False)
+    phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    is_active = serializers.BooleanField(write_only=True, required=False, default=True)
 
     # Teacher fields - employee_id ixtiyoriy, avtomatik generatsiya qilinadi
     employee_id = serializers.CharField(required=False, allow_blank=True)
@@ -85,7 +86,7 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
         model = Teacher
         fields = [
             'username', 'password', 'email', 'first_name', 'last_name',
-            'phone', 'employee_id', 'date_of_birth', 'address',
+            'phone', 'is_active', 'employee_id', 'date_of_birth', 'address',
             'specialization', 'experience_years', 'hire_date',
             'monthly_salary', 'subject_ids', 'class_ids',
         ]
@@ -114,6 +115,7 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
             'first_name': validated_data.pop('first_name'),
             'last_name': validated_data.pop('last_name'),
             'phone': validated_data.pop('phone', ''),
+            'is_active': validated_data.pop('is_active', True),
             'role': 'teacher',
         }
         password = validated_data.pop('password')
