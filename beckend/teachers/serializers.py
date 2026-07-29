@@ -91,6 +91,20 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
             'monthly_salary', 'subject_ids', 'class_ids',
         ]
 
+    def validate(self, data):
+        from accounts.models import User
+        # Check username uniqueness
+        username = data.get('username')
+        if username and User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({'username': 'Bu login (username) allaqachon band.'})
+        
+        # Check employee_id uniqueness if provided
+        employee_id = data.get('employee_id')
+        if employee_id and Teacher.all_objects.filter(employee_id=employee_id).exists():
+            raise serializers.ValidationError({'employee_id': 'Bu xodim ID allaqachon mavjud.'})
+            
+        return data
+
     def _generate_employee_id(self):
         """Avtomatik employee_id generatsiya qilish: TCH-0001, TCH-0002, ..."""
         import re
