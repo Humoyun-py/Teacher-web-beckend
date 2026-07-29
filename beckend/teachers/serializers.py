@@ -94,13 +94,13 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
     def _generate_employee_id(self):
         """Avtomatik employee_id generatsiya qilish: TCH-0001, TCH-0002, ..."""
         import re
-        last_teacher = Teacher.objects.order_by('-id').first()
+        last_teacher = Teacher.all_objects.order_by('-id').first()
         if last_teacher and last_teacher.employee_id:
             match = re.search(r'(\d+)$', last_teacher.employee_id)
             if match:
                 next_num = int(match.group(1)) + 1
             else:
-                next_num = Teacher.objects.count() + 1
+                next_num = Teacher.all_objects.count() + 1
         else:
             next_num = 1
         return f"TCH-{next_num:04d}"
