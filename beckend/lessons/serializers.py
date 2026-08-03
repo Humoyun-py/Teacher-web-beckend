@@ -107,6 +107,54 @@ class LessonSerializer(serializers.ModelSerializer):
         source='get_replacement_status_display', read_only=True,
     )
     duration_minutes = serializers.SerializerMethodField()
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
+
+    def get_start_time(self, obj):
+        return obj.scheduled_start
+
+    def get_end_time(self, obj):
+        return obj.scheduled_end
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        if 'start_time' in data and 'scheduled_start' not in data:
+            data['scheduled_start'] = data.get('start_time')
+        if 'end_time' in data and 'scheduled_end' not in data:
+            data['scheduled_end'] = data.get('end_time')
+        return super().to_internal_value(data)
+
+    def validate(self, data):
+        if self.instance:
+            date = data.get('date', self.instance.date)
+            teacher = data.get('teacher', self.instance.teacher)
+            scheduled_start = data.get('scheduled_start', self.instance.scheduled_start)
+            scheduled_end = data.get('scheduled_end', self.instance.scheduled_end)
+        else:
+            date = data.get('date')
+            teacher = data.get('teacher')
+            scheduled_start = data.get('scheduled_start')
+            scheduled_end = data.get('scheduled_end')
+
+        if scheduled_start and scheduled_end and scheduled_start >= scheduled_end:
+            raise serializers.ValidationError(
+                'Boshlanish vaqti tugash vaqtidan oldin bo\'lishi kerak.'
+            )
+
+        if teacher and date and scheduled_start:
+            qs = Lesson.objects.filter(
+                teacher=teacher,
+                date=date,
+                scheduled_start=scheduled_start,
+            )
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    'Bu ustoz uchun shu vaqtda boshqa dars mavjud.'
+                )
+
+        return data
 
     class Meta:
         model = Lesson
@@ -114,7 +162,7 @@ class LessonSerializer(serializers.ModelSerializer):
             'id', 'schedule', 'teacher', 'teacher_name',
             'subject', 'subject_name', 'school_class', 'class_name',
             'class_room', 'class_floor',
-            'date', 'scheduled_start', 'scheduled_end',
+            'date', 'scheduled_start', 'scheduled_end', 'start_time', 'end_time',
             'actual_start', 'actual_end', 'status', 'status_display',
             'is_replaced', 'replacement_teacher', 'replacement_teacher_name',
             'replacement_status', 'replacement_status_display', 'replacement_reason',
@@ -138,19 +186,49 @@ class LessonSerializer(serializers.ModelSerializer):
 class LessonCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating lessons."""
 
+    scheduled_start = serializers.TimeField(read_only=True)
+    scheduled_end = serializers.TimeField(read_only=True)
+    start_time = serializers.TimeField(
+        write_only=True, required=False, allow_null=True,
+        source='scheduled_start',
+    )
+    end_time = serializers.TimeField(
+        write_only=True, required=False, allow_null=True,
+        source='scheduled_end',
+    )
+
     class Meta:
         model = Lesson
         fields = [
             'teacher', 'subject', 'school_class',
             'date', 'scheduled_start', 'scheduled_end',
+            'start_time', 'end_time',
             'room', 'notes',
         ]
+        validators = []
 
     def validate(self, data):
-        if data['scheduled_start'] >= data['scheduled_end']:
+        scheduled_start = data.get('scheduled_start')
+        scheduled_end = data.get('scheduled_end')
+
+        if scheduled_start and scheduled_end and scheduled_start >= scheduled_end:
             raise serializers.ValidationError(
                 'Boshlanish vaqti tugash vaqtidan oldin bo\'lishi kerak.'
             )
+
+        teacher = data.get('teacher')
+        date = data.get('date')
+
+        if teacher and date and scheduled_start:
+            if Lesson.objects.filter(
+                teacher=teacher,
+                date=date,
+                scheduled_start=scheduled_start,
+            ).exists():
+                raise serializers.ValidationError(
+                    'Bu ustoz uchun shu vaqtda boshqa dars mavjud.'
+                )
+
         return data
 
 

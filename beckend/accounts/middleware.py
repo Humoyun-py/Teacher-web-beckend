@@ -1,4 +1,5 @@
 import json
+from django.http import RawPostDataException
 from django.utils.deprecation import MiddlewareMixin
 from .models import AuditLog
 
@@ -46,7 +47,7 @@ class AuditLogMiddleware(MiddlewareMixin):
                             for key in req_data.keys():
                                 if 'password' in key.lower():
                                     req_data[key] = '******'
-                    except (json.JSONDecodeError, UnicodeDecodeError):
+                    except (json.JSONDecodeError, UnicodeDecodeError, RawPostDataException):
                         pass
 
                 # Try parsing response body safely

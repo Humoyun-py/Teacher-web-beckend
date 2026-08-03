@@ -63,6 +63,24 @@ class LessonApiTests(APITestCase):
         self.lesson.refresh_from_db()
         self.assertEqual(self.lesson.status, 'completed')
 
+    def test_create_lesson_with_start_and_end_alias(self):
+        """Yangi darsni start_time/end_time alias bilan yaratish testi"""
+        self.client.force_authenticate(user=self.admin)
+        data = {
+            'teacher': self.teacher.id,
+            'subject': self.subject.id,
+            'school_class': self.school_class.id,
+            'date': date.today(),
+            'start_time': '09:00:00',
+            'end_time': '09:45:00',
+            'room': '102',
+            'notes': 'Test dars',
+        }
+        res = self.client.post('/api/v1/lessons/', data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data['scheduled_start'], '09:00:00')
+        self.assertEqual(res.data['scheduled_end'], '09:45:00')
+
     def test_conflict_detection_logic(self):
         """Jadval to'qnashuvlarini tekshirish (POST)"""
         self.client.force_authenticate(user=self.admin)
