@@ -2,6 +2,7 @@
 Serializers for teachers app.
 """
 
+from django.db import IntegrityError
 from rest_framework import serializers
 from .models import Teacher, Subject, SchoolClass
 from accounts.serializers import UserSerializer, UserCreateSerializer

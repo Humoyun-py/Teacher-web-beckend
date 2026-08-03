@@ -101,8 +101,7 @@ export default function TeachersList() {
         const createData = { ...newTeacher };
         if (createData.monthly_salary === '') delete createData.monthly_salary;
         if (createData.lesson_rate === '') delete createData.lesson_rate;
-        const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
-        await api.createTeacher({ ...createData, employee_id });
+        await api.createTeacher(createData);
         alert('✅ O\'qituvchi muvaffaqiyatli yaratildi!');
       }
       setShowModal(false);
