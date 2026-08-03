@@ -19,6 +19,37 @@ export default function TeachersList() {
   const [salaryYear, setSalaryYear] = useState(new Date().getFullYear());
   const [salaryTeacherId, setSalaryTeacherId] = useState(null);
 
+  const formatPhoneInput = (value) => {
+    let cleaned = String(value || '').replace(/[^\d]/g, '');
+    if (cleaned.startsWith('998')) cleaned = cleaned.slice(3);
+    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+    cleaned = cleaned.slice(0, 9);
+    return cleaned ? `+998${cleaned}` : '';
+  };
+
+  const formatUzPhoneDisplay = (value) => {
+    const digits = String(value || '').replace(/[^\d]/g, '');
+    if (!digits) return '';
+    let plain = digits;
+    if (plain.startsWith('998')) plain = plain.slice(3);
+    if (plain.startsWith('0')) plain = plain.slice(1);
+    plain = plain.slice(0, 9);
+    const parts = [];
+    if (plain.length >= 2) parts.push(plain.slice(0, 2));
+    if (plain.length >= 5) parts.push(plain.slice(2, 5));
+    if (plain.length >= 7) parts.push(plain.slice(5, 7));
+    if (plain.length > 7) parts.push(plain.slice(7));
+    return `+998 ${parts.filter(Boolean).join(' ')}`.trim();
+  };
+
+  const formatMoneyInput = (value) => String(value || '').replace(/[^\d]/g, '');
+
+  const formatMoneyDisplay = (value) => {
+    const digits = String(value || '').replace(/[^\d]/g, '');
+    const num = Number(digits);
+    return num ? num.toLocaleString('uz-UZ') : '';
+  };
+
   const loadTeachers = async () => {
     setLoading(true);
     try {
@@ -273,18 +304,38 @@ export default function TeachersList() {
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>Telefon Raqam</label>
-                <input required type="text" className="input-field" value={newTeacher.phone} onChange={e => setNewTeacher({ ...newTeacher, phone: e.target.value })} placeholder="+998 90 123 45 67" />
+                <input
+                  required
+                  type="tel"
+                  inputMode="tel"
+                  className="input-field"
+                  value={newTeacher.phone}
+                  onChange={e => setNewTeacher({ ...newTeacher, phone: formatPhoneInput(e.target.value) })}
+                  placeholder="+998901234567"
+                />
+                {newTeacher.phone && (
+                  <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    Ko'rinish: {formatUzPhoneDisplay(newTeacher.phone)}
+                  </div>
+                )}
               </div>
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>💰 Oylik maosh (so'm)</label>
-                <input type="number" className="input-field" value={newTeacher.monthly_salary} onChange={e => setNewTeacher({ ...newTeacher, monthly_salary: e.target.value })} placeholder="Masalan: 3000000" min="0" step="1000" />
-                {newTeacher.monthly_salary > 0 && (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="input-field"
+                  value={formatMoneyDisplay(newTeacher.monthly_salary)}
+                  onChange={e => setNewTeacher({ ...newTeacher, monthly_salary: formatMoneyInput(e.target.value) })}
+                  placeholder="Masalan: 3000000"
+                />
+                {newTeacher.monthly_salary && Number(newTeacher.monthly_salary) > 0 && (
                   <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', fontSize: '0.8rem' }}>
                     <div style={{ color: 'var(--text-muted)' }}>📊 Avtomatik hisob:</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem', marginTop: '0.25rem' }}>
-                      <span>Kunlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24)}</span>
-                      <span>Soatlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8)}</span>
-                      <span>Minutlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8 / 60)}</span>
+                      <span>Kunlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(Number(newTeacher.monthly_salary) / 24)}</span>
+                      <span>Soatlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(Number(newTeacher.monthly_salary) / 24 / 8)}</span>
+                      <span>Minutlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(Number(newTeacher.monthly_salary) / 24 / 8 / 60)}</span>
                     </div>
                   </div>
                 )}
@@ -292,12 +343,19 @@ export default function TeachersList() {
 
               <div className="input-group">
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>📚 Har bir dars uchun to'lov (so'm)</label>
-                <input type="number" className="input-field" value={newTeacher.lesson_rate} onChange={e => setNewTeacher({ ...newTeacher, lesson_rate: e.target.value })} placeholder="Masalan: 200000" min="0" step="1000" />
-                {newTeacher.lesson_rate > 0 && (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="input-field"
+                  value={formatMoneyDisplay(newTeacher.lesson_rate)}
+                  onChange={e => setNewTeacher({ ...newTeacher, lesson_rate: formatMoneyInput(e.target.value) })}
+                  placeholder="Masalan: 200000"
+                />
+                {newTeacher.lesson_rate && Number(newTeacher.lesson_rate) > 0 && (
                   <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', fontSize: '0.8rem' }}>
                     <div style={{ color: 'var(--text-muted)' }}>💡 Dars asosida hisoblash:</div>
                     <div style={{ marginTop: '0.25rem', color: 'var(--success)' }}>
-                      Har bir dars uchun <strong>{formatMoney(newTeacher.lesson_rate)}</strong> to'lanadi
+                      Har bir dars uchun <strong>{formatMoney(Number(newTeacher.lesson_rate))}</strong> to'lanadi
                     </div>
                     <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Agar o'qituvchi darsini boshqa o'qituvchiga o'tkazsa, o'tkazgan o'qituvchiga bu pul yoziladi

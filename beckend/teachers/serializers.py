@@ -160,10 +160,13 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
 class TeacherUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating Teacher data."""
 
+    username = serializers.CharField(required=False)
+    password = serializers.CharField(write_only=True, required=False, min_length=6)
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
-    phone = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False)
+    is_active = serializers.BooleanField(required=False)
     subject_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True, required=False,
@@ -176,19 +179,31 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = [
-            'first_name', 'last_name', 'phone', 'email',
+            'username', 'password', 'first_name', 'last_name', 'phone', 'email', 'is_active',
             'employee_id', 'status', 'date_of_birth', 'address',
             'specialization', 'experience_years', 'hire_date',
             'monthly_salary', 'lesson_rate', 'subject_ids', 'class_ids',
         ]
 
+    def validate_username(self, value):
+        from accounts.models import User
+        if self.instance and self.instance.user.username != value:
+            if User.objects.filter(username=value).exclude(pk=self.instance.user.pk).exists():
+                raise serializers.ValidationError('Bu login (username) allaqachon band.')
+        return value
+
     def update(self, instance, validated_data):
         # Update user fields
         user = instance.user
-        user_fields = ['first_name', 'last_name', 'phone', 'email']
+        user_fields = ['username', 'first_name', 'last_name', 'phone', 'email', 'is_active']
         for field in user_fields:
             if field in validated_data:
                 setattr(user, field, validated_data.pop(field))
+
+        password = validated_data.pop('password', None)
+        if password:
+            user.set_password(password)
+
         user.save()
 
         # Update subject/class assignments
