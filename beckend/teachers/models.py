@@ -109,6 +109,11 @@ class Teacher(SoftDeleteModel):
         max_digits=12, decimal_places=2, default=0,
         verbose_name='Oylik maosh',
     )
+    lesson_rate = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='Har bir dars uchun to\'lov',
+        help_text='Bitta dars o\'tqazgani uchun to\'lanadigan summa',
+    )
     daily_rate = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
         verbose_name='Kunlik maosh',

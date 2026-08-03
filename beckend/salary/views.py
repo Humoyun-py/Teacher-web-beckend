@@ -155,62 +155,77 @@ class SalaryViewSet(viewsets.ModelViewSet):
         })
 
     def _calculate_teacher_salary(self, teacher, month, year):
-        # 1. Base Salary & Daily rate
+        # 1. Teacher ma'lumotlari
         base_salary = Decimal(str(teacher.monthly_salary))
-        # 24 ish kuni deb hisoblaymiz (yoki o'zgartirish mumkin)
-        daily_rate = base_salary / Decimal('24') if base_salary > 0 else Decimal('0.00')
+        lesson_rate = Decimal(str(teacher.lesson_rate))
         
-        # 2. Ishlab topilgan kunlar (Base Earned)
+        # 2. Davomat (kelgan kunlar)
         attendances = Attendance.objects.filter(
             teacher=teacher,
             date__month=month,
             date__year=year
         )
         present_days = attendances.filter(status__in=[Attendance.Status.PRESENT, Attendance.Status.LATE]).count()
-        base_earned = Decimal(present_days) * daily_rate
+        base_earned = Decimal(present_days) * (base_salary / Decimal('24')) if base_salary > 0 else Decimal('0.00')
         
-        # 3. Kechikish jarimalari (Penalty Amount)
+        # 3. Kechikish jarimalari
         penalty_amount = attendances.aggregate(total=Sum('penalty_amount'))['total'] or Decimal('0.00')
         
-        # 4. O'rinbosarlikdan kelgan haq (Replacement Earned)
-        replaced_in_count = Lesson.objects.filter(
-            replacement_teacher=teacher,
-            replacement_status=Lesson.ReplacementStatus.APPROVED,
+        # 4. O'z darslari (o'tqazilgan darslar soni) - DARS ASOSIDA
+        # Asl teacher o'z darslarini o'tqazgani uchun
+        own_lessons = Lesson.objects.filter(
+            teacher=teacher,
             date__month=month,
             date__year=year,
-            status=Lesson.Status.COMPLETED
-        ).count()
-        replacement_earned = Decimal(replaced_in_count) * daily_rate
+            status=Lesson.Status.COMPLETED,
+            is_replaced=False,  # Replace bo'lmagan o'z darslari
+        )
+        own_lessons_count = own_lessons.count()
+        lessons_earned = Decimal(own_lessons_count) * lesson_rate
         
-        # 5. O'rniga o'tilgan dars chegirmasi (Replaced Out Deduction)
-        # Teacher o'zi kelmagan va o'rniga boshqa teacher o'tgan bo'lsa
-        replaced_out_count = Lesson.objects.filter(
+        # 5. O'rniga o'tilgan darslar (boshqa teacherga pul o'tadi)
+        replaced_out_lessons = Lesson.objects.filter(
             teacher=teacher,
             is_replaced=True,
             replacement_status=Lesson.ReplacementStatus.APPROVED,
             date__month=month,
             date__year=year,
             status=Lesson.Status.COMPLETED
-        ).count()
-        replaced_out_deduction = Decimal(replaced_out_count) * daily_rate
+        )
+        replaced_out_count = replaced_out_lessons.count()
+        # Asl teacher'ga bu darslar uchun PUL TO'LANMAYDI (o'rniga o'tkazgan teacherga o'tadi)
+        replaced_out_deduction = Decimal(replaced_out_count) * lesson_rate
         
-        # 6. KPI Bonus / Penalty
+        # 6. Boshqalar o'rniga o'tilgan darslar (qo'shimcha pul)
+        replaced_in_lessons = Lesson.objects.filter(
+            replacement_teacher=teacher,
+            replacement_status=Lesson.ReplacementStatus.APPROVED,
+            date__month=month,
+            date__year=year,
+            status=Lesson.Status.COMPLETED
+        )
+        replaced_in_count = replaced_in_lessons.count()
+        replacement_earned = Decimal(replaced_in_count) * lesson_rate
+        
+        # 7. KPI Bonus / Penalty
         kpi_bonus = Decimal('0.00')
         kpi_penalty = Decimal('0.00')
         
         try:
             kpi = KPIRecord.objects.get(teacher=teacher, month=month, year=year)
             if kpi.grade == 'A':
-                kpi_bonus = base_salary * Decimal('0.10') # Grade A: 10% ustama
+                kpi_bonus = base_salary * Decimal('0.10')
             elif kpi.grade == 'B':
-                kpi_bonus = base_salary * Decimal('0.05') # Grade B: 5% ustama
+                kpi_bonus = base_salary * Decimal('0.05')
             elif kpi.grade == 'F':
-                kpi_penalty = base_salary * Decimal('0.10') # Grade F: 10% jarima
+                kpi_penalty = base_salary * Decimal('0.10')
         except KPIRecord.DoesNotExist:
-            pass # KPI hali hisoblanmagan bo'lsa ustama/chegirma 0 bo'ladi
+            pass
             
-        # 7. Yakuniy oylik maosh (Final Salary)
-        final_salary = base_earned + replacement_earned - replaced_out_deduction - penalty_amount + kpi_bonus - kpi_penalty
+        # 8. Yakuniy oylik maosh
+        # Asosiy: lessons_earned (o'z darslari) + replacement_earned (boshqa o'rniga) - replaced_out_deduction (o'z darsini o'tkazgani)
+        # + base_earned (davomat asosida) - penalty_amount + kpi_bonus - kpi_penalty
+        final_salary = lessons_earned + replacement_earned - replaced_out_deduction + base_earned - penalty_amount + kpi_bonus - kpi_penalty
         if final_salary < 0:
             final_salary = Decimal('0.00')
             
@@ -221,6 +236,9 @@ class SalaryViewSet(viewsets.ModelViewSet):
             defaults={
                 'base_salary': base_salary,
                 'base_earned': base_earned.quantize(Decimal('0.01')),
+                'lessons_completed': own_lessons_count,
+                'lesson_rate': lesson_rate,
+                'lessons_earned': lessons_earned.quantize(Decimal('0.01')),
                 'replacement_earned': replacement_earned.quantize(Decimal('0.01')),
                 'replaced_out_deduction': replaced_out_deduction.quantize(Decimal('0.01')),
                 'penalty_amount': penalty_amount.quantize(Decimal('0.01')),

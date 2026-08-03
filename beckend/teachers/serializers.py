@@ -50,7 +50,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             'id', 'user', 'employee_id', 'subjects', 'classes',
             'status', 'date_of_birth', 'address', 'specialization',
             'experience_years', 'hire_date', 'full_name',
-            'monthly_salary', 'daily_rate', 'hourly_rate', 'minute_rate',
+            'monthly_salary', 'lesson_rate', 'daily_rate', 'hourly_rate', 'minute_rate',
             'created_at', 'updated_at',
         ]
 
@@ -88,7 +88,7 @@ class TeacherCreateSerializer(serializers.ModelSerializer):
             'username', 'password', 'email', 'first_name', 'last_name',
             'phone', 'is_active', 'employee_id', 'date_of_birth', 'address',
             'specialization', 'experience_years', 'hire_date',
-            'monthly_salary', 'subject_ids', 'class_ids',
+            'monthly_salary', 'lesson_rate', 'subject_ids', 'class_ids',
         ]
 
     def validate(self, data):
@@ -179,7 +179,7 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'phone', 'email',
             'employee_id', 'status', 'date_of_birth', 'address',
             'specialization', 'experience_years', 'hire_date',
-            'monthly_salary', 'subject_ids', 'class_ids',
+            'monthly_salary', 'lesson_rate', 'subject_ids', 'class_ids',
         ]
 
     def update(self, instance, validated_data):
@@ -223,7 +223,7 @@ class TeacherListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'employee_id', 'full_name', 'first_name', 'last_name',
             'username', 'phone', 'status', 'is_active',
-            'monthly_salary', 'daily_rate', 'hourly_rate', 'minute_rate',
+            'monthly_salary', 'lesson_rate', 'daily_rate', 'hourly_rate', 'minute_rate',
             'created_at',
         ]
 

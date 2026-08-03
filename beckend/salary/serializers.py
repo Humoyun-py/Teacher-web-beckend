@@ -12,8 +12,8 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
         model = SalaryRecord
         fields = [
             'id', 'teacher', 'teacher_detail', 'month', 'year',
-            'base_salary', 'base_earned', 'replacement_earned',
-            'replaced_out_deduction', 'penalty_amount', 'kpi_bonus',
+            'base_salary', 'base_earned', 'lessons_completed', 'lesson_rate', 'lessons_earned',
+            'replacement_earned', 'replaced_out_deduction', 'penalty_amount', 'kpi_bonus',
             'kpi_penalty', 'final_salary', 'status', 'status_display',
             'calculated_at', 'approved_by', 'approved_by_detail',
             'approved_at', 'paid_at'

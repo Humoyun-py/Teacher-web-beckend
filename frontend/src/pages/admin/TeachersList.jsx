@@ -9,7 +9,7 @@ export default function TeachersList() {
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
+  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
 
   // Salary report state
   const [showSalaryModal, setShowSalaryModal] = useState(false);
@@ -44,13 +44,14 @@ export default function TeachersList() {
       password: '',
       phone: teacher.phone || '',
       monthly_salary: teacher.monthly_salary || '',
+      lesson_rate: teacher.lesson_rate || '',
     });
     setShowModal(true);
   };
 
   const handleOpenCreateModal = () => {
     setEditingTeacher(null);
-    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
+    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
     setShowModal(true);
   };
 
@@ -62,17 +63,19 @@ export default function TeachersList() {
         const updateData = { ...newTeacher };
         if (!updateData.password) delete updateData.password;
         if (updateData.monthly_salary === '') delete updateData.monthly_salary;
+        if (updateData.lesson_rate === '') delete updateData.lesson_rate;
         await api.patchTeacher(editingTeacher.id, updateData);
         alert('✅ O\'qituvchi muvaffaqiyatli yangilandi!');
       } else {
         const createData = { ...newTeacher };
         if (createData.monthly_salary === '') delete createData.monthly_salary;
+        if (createData.lesson_rate === '') delete createData.lesson_rate;
         const employee_id = 'TCH-' + Math.floor(10000 + Math.random() * 90000);
         await api.createTeacher({ ...createData, employee_id });
         alert('✅ O\'qituvchi muvaffaqiyatli yaratildi!');
       }
       setShowModal(false);
-      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '' });
+      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
       setEditingTeacher(null);
       await loadTeachers();
     } catch (err) {
@@ -195,6 +198,11 @@ export default function TeachersList() {
                       <span style={{ color: 'var(--success)', fontWeight: 600 }}>
                         {teacher.monthly_salary ? formatMoney(teacher.monthly_salary) : '-'}
                       </span>
+                      {teacher.lesson_rate > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>
+                          📚 {formatMoney(teacher.lesson_rate)}/dars
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span className={`badge ${teacher.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
@@ -277,6 +285,22 @@ export default function TeachersList() {
                       <span>Kunlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24)}</span>
                       <span>Soatlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8)}</span>
                       <span>Minutlik:</span><span style={{ fontWeight: 600 }}>{formatMoney(newTeacher.monthly_salary / 24 / 8 / 60)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="input-group">
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>📚 Har bir dars uchun to'lov (so'm)</label>
+                <input type="number" className="input-field" value={newTeacher.lesson_rate} onChange={e => setNewTeacher({ ...newTeacher, lesson_rate: e.target.value })} placeholder="Masalan: 200000" min="0" step="1000" />
+                {newTeacher.lesson_rate > 0 && (
+                  <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <div style={{ color: 'var(--text-muted)' }}>💡 Dars asosida hisoblash:</div>
+                    <div style={{ marginTop: '0.25rem', color: 'var(--success)' }}>
+                      Har bir dars uchun <strong>{formatMoney(newTeacher.lesson_rate)}</strong> to'lanadi
+                    </div>
+                    <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      Agar o'qituvchi darsini boshqa o'qituvchiga o'tkazsa, o'tkazgan o'qituvchiga bu pul yoziladi
                     </div>
                   </div>
                 )}

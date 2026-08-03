@@ -354,13 +354,30 @@ class TeacherViewSet(viewsets.ModelViewSet):
             })
 
         # ── Hisoblash ──
+        # Dars asosida hisoblash
+        lesson_rate = teacher.lesson_rate
+        
+        # O'z darslari uchun (replace bo'lmagan, completed)
+        own_lessons_completed = Lesson.objects.filter(
+            teacher=teacher,
+            date__month=month,
+            date__year=year,
+            is_replaced=False,
+            status=Lesson.Status.COMPLETED,
+        ).count()
+        lessons_earned = Decimal(own_lessons_completed) * lesson_rate
+        
+        # Boshqalar o'rniga o'tilgan darslar uchun
+        replacement_earned = Decimal(replaced_in_count) * lesson_rate
+        
+        # O'z darsini o'tkazib yuborgani uchun (replace bo'lgan)
+        replaced_out_deduction = Decimal(replaced_out_count) * lesson_rate
+        
+        # Davomat asosida kunlik
         total_earned = Decimal(days_present) * teacher.daily_rate
-        # Replace in darslar uchun kunlik rate qo'shish
-        replacement_earned = Decimal(replaced_in_count) * teacher.daily_rate
-        # Replace out darslar uchun kunlik rate ayirish
-        replaced_out_deduction = Decimal(replaced_out_count) * teacher.daily_rate
-
-        final_salary = total_earned + replacement_earned - replaced_out_deduction - total_penalty
+        
+        # YAKUNIY: Darslar + Replacement + Davomat - Jarima
+        final_salary = lessons_earned + replacement_earned - replaced_out_deduction + total_earned - total_penalty
 
         # Kunlik davomatlar tafsiloti
         daily_details = []
@@ -382,6 +399,7 @@ class TeacherViewSet(viewsets.ModelViewSet):
             'month': month,
             'year': year,
             'monthly_salary': str(teacher.monthly_salary),
+            'lesson_rate': str(lesson_rate),
             'daily_rate': str(teacher.daily_rate),
             'hourly_rate': str(teacher.hourly_rate),
             'minute_rate': str(teacher.minute_rate),
@@ -390,6 +408,8 @@ class TeacherViewSet(viewsets.ModelViewSet):
             'days_late': days_late,
             'total_late_minutes': total_late_minutes,
             'own_lessons': own_lessons,
+            'own_lessons_completed': own_lessons_completed,
+            'lessons_earned': str(lessons_earned),
             'replaced_out_count': replaced_out_count,
             'replaced_out_details': replaced_out_details,
             'replaced_in_count': replaced_in_count,

@@ -22,6 +22,11 @@ class SalaryRecord(SoftDeleteModel):
     base_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, verbose_name='Asosiy oylik')
     base_earned = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, verbose_name='Ishlab topilgan maosh')
     
+    # Dars asosida hisoblash
+    lessons_completed = models.IntegerField(default=0, verbose_name='O\'tqazilgan darslar soni')
+    lesson_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name='Har bir dars uchun to\'lov')
+    lessons_earned = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, verbose_name='Darslardan ishlab topilgan')
+    
     replacement_earned = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, verbose_name='O\'rinbosarlikdan kelgan haq')
     replaced_out_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0.0, verbose_name='O\'rniga o\'tilgan dars chegirmasi')
     

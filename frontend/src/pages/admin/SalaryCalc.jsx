@@ -110,7 +110,7 @@ export default function SalaryCalc() {
       <div className="flex-between">
         <div>
           <h1 className="heading-2">💰 Oylik Hisoblash</h1>
-          <p className="text-muted">O'qituvchi oylik maoshini hisoblash (replace va jarimalar bilan)</p>
+          <p className="text-muted">O'qituvchi oylik maoshini hisoblash (dars asosida + replace va jarimalar bilan)</p>
         </div>
         <div className="flex-center gap-2">
           <button className="btn btn-primary" onClick={handleCalculateSalary}>
@@ -207,10 +207,12 @@ export default function SalaryCalc() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
             {[
               { label: 'Oylik maosh', value: fmt(report.monthly_salary), color: 'var(--primary)', bg: 'rgba(99,102,241,0.1)' },
+              { label: 'Har bir dars', value: fmt(report.lesson_rate), color: 'var(--primary)', bg: 'rgba(99,102,241,0.08)' },
               { label: 'Kelgan kunlar', value: `${report.days_present} kun`, color: 'var(--success)', bg: 'rgba(34,197,94,0.1)' },
               { label: 'Kelmagan', value: `${report.days_absent} kun`, color: 'var(--danger)', bg: 'rgba(239,68,68,0.1)' },
               { label: 'Kechikkan', value: `${report.days_late} kun`, color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
               { label: "O'z darslari", value: `${report.own_lessons} ta`, color: 'var(--primary)', bg: 'rgba(99,102,241,0.08)' },
+              { label: "O'tqazilgan darslar", value: `${report.own_lessons_completed || 0} ta`, color: 'var(--success)', bg: 'rgba(34,197,94,0.08)' },
               { label: "O'rniga o'tilgan", value: `${report.replaced_in_count} ta`, color: 'var(--success)', bg: 'rgba(34,197,94,0.08)' },
               { label: 'Replace bo\'lgan', value: `${report.replaced_out_count} ta`, color: 'var(--danger)', bg: 'rgba(239,68,68,0.08)' },
             ].map((c, i) => (
@@ -226,16 +228,20 @@ export default function SalaryCalc() {
             <h4 style={{ marginBottom: '1rem', fontWeight: 600 }}>📊 Moliyaviy hisob</h4>
             <div className="flex-col gap-3">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="flex-center gap-2"><TrendingUp size={16} color="var(--success)" /> Ishlagan kunlar uchun:</span>
-                <span style={{ fontWeight: 600, color: 'var(--success)' }}>+{fmt(report.total_earned)}</span>
+                <span className="flex-center gap-2"><TrendingUp size={16} color="var(--success)" /> O'z darslari ({report.own_lessons_completed || 0} ta × {fmt(report.lesson_rate)}):</span>
+                <span style={{ fontWeight: 600, color: 'var(--success)' }}>+{fmt(report.lessons_earned)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="flex-center gap-2"><TrendingUp size={16} color="var(--success)" /> O'rinbosar darslar uchun:</span>
+                <span className="flex-center gap-2"><TrendingUp size={16} color="var(--success)" /> O'rinbosar darslar ({report.replaced_in_count} ta × {fmt(report.lesson_rate)}):</span>
                 <span style={{ fontWeight: 600, color: 'var(--success)' }}>+{fmt(report.replacement_earned)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="flex-center gap-2"><TrendingDown size={16} color="var(--danger)" /> Replace bo'lgan darslar:</span>
+                <span className="flex-center gap-2"><TrendingDown size={16} color="var(--danger)" /> Replace bo'lgan darslar ({report.replaced_out_count} ta × {fmt(report.lesson_rate)}):</span>
                 <span style={{ fontWeight: 600, color: 'var(--danger)' }}>-{fmt(report.replaced_out_deduction)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="flex-center gap-2"><TrendingUp size={16} color="var(--primary)" /> Ishlagan kunlar ({report.days_present} kun × {fmt(report.daily_rate)}):</span>
+                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>+{fmt(report.total_earned)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="flex-center gap-2"><TrendingDown size={16} color="var(--danger)" /> Kechikish jarimasi:</span>
