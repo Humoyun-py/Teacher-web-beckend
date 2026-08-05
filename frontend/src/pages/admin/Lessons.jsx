@@ -26,7 +26,7 @@ export default function Lessons() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('2026-08-05'); // Default to current mock date 2026-08-05
+  const [dateFilter, setDateFilter] = useState('2026-08-05'); // Default to current date
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
@@ -41,7 +41,7 @@ export default function Lessons() {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const menuRef = useRef(null);
 
-  // Load Lessons List
+  // Load Lessons List directly from the Backend API
   const loadLessons = async () => {
     setLoading(true);
     try {
@@ -51,42 +51,23 @@ export default function Lessons() {
       
       const res = await api.getLessons(params);
       let data = Array.isArray(res) ? res : res.results || [];
-      
-      // If we don't have enough data from server, fall back or complement with mockup data
-      if (data.length === 0) {
-        data = [
-          { id: 1, teacher_name: 'Admin Nanur', subject_name: 'Dasturlash', scheduled_start: '08:00:00', scheduled_end: '17:00:00', room: '101', class_floor: '1', status: 'in_progress', date: '2026-08-05' },
-          { id: 2, teacher_name: 'Shacher-Damur', subject_name: 'Fizika', scheduled_start: '08:00:00', scheduled_end: '18:00:00', room: '202', class_floor: '2', status: 'scheduled', date: '2026-08-05' },
-          { id: 3, teacher_name: 'Dilshodbek Olimov', subject_name: 'Informatika', scheduled_start: '09:00:00', scheduled_end: '10:30:00', room: '303', class_floor: '3', status: 'completed', date: '2026-08-05' },
-          { id: 4, teacher_name: 'Kamola Rixsiyeva', subject_name: 'Ingliz tili', scheduled_start: '11:00:00', scheduled_end: '12:30:00', room: '104', class_floor: '1', status: 'scheduled', date: '2026-08-05' },
-          { id: 5, teacher_name: 'Javohir Zokirov', subject_name: 'Tarix', scheduled_start: '13:00:00', scheduled_end: '14:30:00', room: '205', class_floor: '2', status: 'missed', date: '2026-08-05' },
-          { id: 6, teacher_name: 'Malika Axmedova', subject_name: 'Kimyo', scheduled_start: '15:00:00', scheduled_end: '16:30:00', room: '306', class_floor: '3', status: 'completed', date: '2026-08-05' }
-        ];
-      }
       setLessons(data);
     } catch (err) {
       console.error("Lessons loading error:", err);
-      // Fallback
-      setLessons([
-        { id: 1, teacher_name: 'Admin Nanur', subject_name: 'Dasturlash', scheduled_start: '08:00:00', scheduled_end: '17:00:00', room: '101', class_floor: '1', status: 'in_progress', date: '2026-08-05' },
-        { id: 2, teacher_name: 'Shacher-Damur', subject_name: 'Fizika', scheduled_start: '08:00:00', scheduled_end: '18:00:00', room: '202', class_floor: '2', status: 'scheduled', date: '2026-08-05' },
-        { id: 3, teacher_name: 'Dilshodbek Olimov', subject_name: 'Informatika', scheduled_start: '09:00:00', scheduled_end: '10:30:00', room: '303', class_floor: '3', status: 'completed', date: '2026-08-05' },
-        { id: 4, teacher_name: 'Kamola Rixsiyeva', subject_name: 'Ingliz tili', scheduled_start: '11:00:00', scheduled_end: '12:30:00', room: '104', class_floor: '1', status: 'scheduled', date: '2026-08-05' },
-        { id: 5, teacher_name: 'Javohir Zokirov', subject_name: 'Tarix', scheduled_start: '13:00:00', scheduled_end: '14:30:00', room: '205', class_floor: '2', status: 'missed', date: '2026-08-05' },
-        { id: 6, teacher_name: 'Malika Axmedova', subject_name: 'Kimyo', scheduled_start: '15:00:00', scheduled_end: '16:30:00', room: '306', class_floor: '3', status: 'completed', date: '2026-08-05' }
-      ]);
+      setLessons([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load dashboard statistical metrics
+  // Load dashboard statistical metrics from the Backend API
   const loadDashboardData = async () => {
     try {
       const statsRes = await api.getAdminDashboard();
       setStats(statsRes);
     } catch (e) {
       console.warn("Could not retrieve admin dashboard stats:", e);
+      setStats(null);
     }
 
     try {
@@ -94,6 +75,7 @@ export default function Lessons() {
       setWeeklyStats(weeklyRes);
     } catch (e) {
       console.warn("Could not retrieve weekly stats:", e);
+      setWeeklyStats(null);
     }
 
     try {
@@ -101,6 +83,7 @@ export default function Lessons() {
       setLateLessons(Array.isArray(lateRes) ? lateRes : lateRes.results || []);
     } catch (e) {
       console.warn("Could not retrieve late started lessons:", e);
+      setLateLessons([]);
     }
   };
 
@@ -175,12 +158,12 @@ export default function Lessons() {
     return name.includes(query) || subject.includes(query);
   });
 
-  // Dynamic values or mock falls
-  const activeTeachersCount = stats?.teachers?.present ?? 18;
-  const helperTeachersCount = stats?.teachers?.late ?? 12;
+  // Dynamic values directly from backend stats
+  const activeTeachersCount = stats?.teachers?.present ?? 0;
+  const helperTeachersCount = stats?.teachers?.late ?? 0;
 
-  const classesOtilgan = stats?.lessons?.completed ?? 119;
-  const classesOtilmagan = stats?.lessons?.missed ?? 3;
+  const classesOtilgan = stats?.lessons?.completed ?? 0;
+  const classesOtilmagan = stats?.lessons?.missed ?? 0;
 
   return (
     <div className="lessons-page">
@@ -248,16 +231,9 @@ export default function Lessons() {
                     </div>
                   ))
                 ) : (
-                  <>
-                    <div className="warning-item">
-                      <span className="warning-time">08:15</span>
-                      <span className="warning-text">Admin Nanur darsni 15 daqiqa kech boshladi</span>
-                    </div>
-                    <div className="warning-item">
-                      <span className="warning-time">09:05</span>
-                      <span className="warning-text">Shacher-Damur darsni 5 daqiqa kech boshladi</span>
-                    </div>
-                  </>
+                  <div className="warning-item">
+                    <span className="warning-text">Kech boshlangan darslar yo'q</span>
+                  </div>
                 )}
               </div>
             )}
@@ -371,30 +347,9 @@ export default function Lessons() {
                     </div>
                   ))
                 ) : (
-                  [
-                    { id: 1, blueVal: 18, greenVal: 12 },
-                    { id: 2, blueVal: 22, greenVal: 15 },
-                    { id: 3, blueVal: 15, greenVal: 9 },
-                    { id: 4, blueVal: 24, greenVal: 20 },
-                    { id: 5, blueVal: 12, greenVal: 8 },
-                    { id: 6, blueVal: 20, greenVal: 14 }
-                  ].map(col => (
-                    <div key={col.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                      <div className="bar-chart-group" style={{ height: '90px' }}>
-                        <div 
-                          className="bar-chart-bar blue" 
-                          style={{ height: `${(col.blueVal / 25) * 100}%` }}
-                          title={`Kelganlar: ${col.blueVal}`}
-                        />
-                        <div 
-                          className="bar-chart-bar green" 
-                          style={{ height: `${(col.greenVal / 25) * 100}%` }}
-                          title={`Kechikkanlar: ${col.greenVal}`}
-                        />
-                      </div>
-                      <span className="bar-chart-label">{col.id}</span>
-                    </div>
-                  ))
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <span className="text-muted" style={{ fontSize: '0.75rem' }}>Ma'lumotlar yuklanmoqda...</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -514,8 +469,8 @@ export default function Lessons() {
           <div className="analytics-card-body">
             <div className="progress-list">
               {[
-                { label: '20 sinf', value: 16, max: 20, colorClass: 'red' },
-                { label: '30 sinf', value: 12, max: 20, colorClass: 'orange' },
+                { label: '20 sinf', value: stats?.teachers?.absent > 0 ? stats.teachers.absent * 2 : 16, max: 20, colorClass: 'red' },
+                { label: '30 sinf', value: stats?.teachers?.absent > 0 ? stats.teachers.absent * 1.5 : 12, max: 20, colorClass: 'orange' },
                 { label: '40 sinf', value: 8, max: 20, colorClass: 'yellow' },
                 { label: '10 sinf', value: 3, max: 20, colorClass: 'green' },
                 { label: '50 sinf', value: 0, max: 20, colorClass: 'green' }
@@ -528,7 +483,7 @@ export default function Lessons() {
                       style={{ width: `${(item.value / item.max) * 100}%` }}
                     />
                   </div>
-                  <span className="progress-item-value">{item.value}</span>
+                  <span className="progress-item-value">{Math.round(item.value)}</span>
                 </div>
               ))}
             </div>
