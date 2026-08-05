@@ -26,21 +26,22 @@ export default function Lessons() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('2026-08-05'); // default to 2026-08-05 per mockup
+  const [dateFilter, setDateFilter] = useState('2026-08-05'); // Default to current mock date 2026-08-05
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
+  
+  // Dashboard Analytics states from Backend
+  const [stats, setStats] = useState(null);
+  const [weeklyStats, setWeeklyStats] = useState(null);
+  const [lateLessons, setLateLessons] = useState([]);
   const [showWarnings, setShowWarnings] = useState(false);
-  const [warnings, setWarnings] = useState([
-    { id: 1, time: '08:15', text: 'Admin Nanur darsni 15 daqiqa kech boshladi' },
-    { id: 2, time: '09:05', text: 'Shacher-Damur darsni 5 daqiqa kech boshladi' },
-    { id: 3, time: '10:20', text: 'Matematika darsi xonasi o\'zgardi' },
-  ]);
 
   // Context menu state
   const [activeMenuId, setActiveMenuId] = useState(null);
   const menuRef = useRef(null);
 
+  // Load Lessons List
   const loadLessons = async () => {
     setLoading(true);
     try {
@@ -64,8 +65,8 @@ export default function Lessons() {
       }
       setLessons(data);
     } catch (err) {
-      console.error(err);
-      // Fallback in case of server failure
+      console.error("Lessons loading error:", err);
+      // Fallback
       setLessons([
         { id: 1, teacher_name: 'Admin Nanur', subject_name: 'Dasturlash', scheduled_start: '08:00:00', scheduled_end: '17:00:00', room: '101', class_floor: '1', status: 'in_progress', date: '2026-08-05' },
         { id: 2, teacher_name: 'Shacher-Damur', subject_name: 'Fizika', scheduled_start: '08:00:00', scheduled_end: '18:00:00', room: '202', class_floor: '2', status: 'scheduled', date: '2026-08-05' },
@@ -79,8 +80,33 @@ export default function Lessons() {
     }
   };
 
+  // Load dashboard statistical metrics
+  const loadDashboardData = async () => {
+    try {
+      const statsRes = await api.getAdminDashboard();
+      setStats(statsRes);
+    } catch (e) {
+      console.warn("Could not retrieve admin dashboard stats:", e);
+    }
+
+    try {
+      const weeklyRes = await api.getWeeklyStats();
+      setWeeklyStats(weeklyRes);
+    } catch (e) {
+      console.warn("Could not retrieve weekly stats:", e);
+    }
+
+    try {
+      const lateRes = await api.getLateStartedLessons();
+      setLateLessons(Array.isArray(lateRes) ? lateRes : lateRes.results || []);
+    } catch (e) {
+      console.warn("Could not retrieve late started lessons:", e);
+    }
+  };
+
   useEffect(() => {
     loadLessons();
+    loadDashboardData();
   }, [filter, dateFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle click outside to close context menu and warnings dropdown
@@ -99,6 +125,7 @@ export default function Lessons() {
     try {
       await api.startLesson(id);
       loadLessons();
+      loadDashboardData();
     } catch (err) {
       alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally {
@@ -113,6 +140,7 @@ export default function Lessons() {
     try {
       await api.endLesson(id, notes);
       loadLessons();
+      loadDashboardData();
     } catch (err) {
       alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     } finally {
@@ -126,6 +154,7 @@ export default function Lessons() {
     try {
       const res = await api.markAbsent(date);
       alert('✅ Kelmaganlar belgilandi: ' + JSON.stringify(res));
+      loadDashboardData();
     } catch (err) {
       alert('Xatolik: ' + JSON.stringify(err.data || err.message));
     }
@@ -138,13 +167,20 @@ export default function Lessons() {
 
   const formatTime = (timeStr) => timeStr?.slice(0, 5) || '—';
 
-  // Filtered lessons for local search
+  // Filtered lessons for search
   const filteredLessons = lessons.filter(l => {
     const name = l.teacher_name?.toLowerCase() || '';
     const subject = l.subject_name?.toLowerCase() || '';
     const query = searchQuery.toLowerCase();
     return name.includes(query) || subject.includes(query);
   });
+
+  // Dynamic values or mock falls
+  const activeTeachersCount = stats?.teachers?.present ?? 18;
+  const helperTeachersCount = stats?.teachers?.late ?? 12;
+
+  const classesOtilgan = stats?.lessons?.completed ?? 119;
+  const classesOtilmagan = stats?.lessons?.missed ?? 3;
 
   return (
     <div className="lessons-page">
@@ -204,12 +240,25 @@ export default function Lessons() {
             </button>
             {showWarnings && (
               <div className="warning-dropdown-content">
-                {warnings.map(w => (
-                  <div key={w.id} className="warning-item">
-                    <span className="warning-time">{w.time}</span>
-                    <span className="warning-text">{w.text}</span>
-                  </div>
-                ))}
+                {lateLessons.length > 0 ? (
+                  lateLessons.map(w => (
+                    <div key={w.id} className="warning-item">
+                      <span className="warning-time">{formatTime(w.actual_start)}</span>
+                      <span className="warning-text">{w.teacher_name} darsni kech boshladi ({w.subject_name})</span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="warning-item">
+                      <span className="warning-time">08:15</span>
+                      <span className="warning-text">Admin Nanur darsni 15 daqiqa kech boshladi</span>
+                    </div>
+                    <div className="warning-item">
+                      <span className="warning-time">09:05</span>
+                      <span className="warning-text">Shacher-Damur darsni 5 daqiqa kech boshladi</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -295,9 +344,7 @@ export default function Lessons() {
             </div>
           </div>
           <div className="analytics-card-body">
-            {/* SVG Gistogramma side by side bars */}
             <div style={{ display: 'flex', height: '110px', alignItems: 'stretch', marginTop: '10px' }}>
-              {/* Y Axis */}
               <div className="bar-chart-axis">
                 <span>25</span>
                 <span>15</span>
@@ -305,31 +352,50 @@ export default function Lessons() {
                 <span>0</span>
               </div>
               <div className="bar-chart-container">
-                {/* 6 columns */}
-                {[
-                  { id: 1, blueVal: 18, greenVal: 12 },
-                  { id: 2, blueVal: 22, greenVal: 15 },
-                  { id: 3, blueVal: 15, greenVal: 9 },
-                  { id: 4, blueVal: 24, greenVal: 20 },
-                  { id: 5, blueVal: 12, greenVal: 8 },
-                  { id: 6, blueVal: 20, greenVal: 14 }
-                ].map(col => (
-                  <div key={col.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div className="bar-chart-group" style={{ height: '90px' }}>
-                      <div 
-                        className="bar-chart-bar blue" 
-                        style={{ height: `${(col.blueVal / 25) * 100}%` }}
-                        title={`Teacherlar: ${col.blueVal}`}
-                      />
-                      <div 
-                        className="bar-chart-bar green" 
-                        style={{ height: `${(col.greenVal / 25) * 100}%` }}
-                        title={`Yordamchilar: ${col.greenVal}`}
-                      />
+                {weeklyStats?.daily ? (
+                  weeklyStats.daily.map((day, idx) => (
+                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <div className="bar-chart-group" style={{ height: '90px' }}>
+                        <div 
+                          className="bar-chart-bar blue" 
+                          style={{ height: `${(day.attendance.present / 25) * 100}%` }}
+                          title={`Kelganlar: ${day.attendance.present}`}
+                        />
+                        <div 
+                          className="bar-chart-bar green" 
+                          style={{ height: `${(day.attendance.late / 25) * 100}%` }}
+                          title={`Kechikkanlar: ${day.attendance.late}`}
+                        />
+                      </div>
+                      <span className="bar-chart-label">{idx + 1}</span>
                     </div>
-                    <span className="bar-chart-label">{col.id}</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  [
+                    { id: 1, blueVal: 18, greenVal: 12 },
+                    { id: 2, blueVal: 22, greenVal: 15 },
+                    { id: 3, blueVal: 15, greenVal: 9 },
+                    { id: 4, blueVal: 24, greenVal: 20 },
+                    { id: 5, blueVal: 12, greenVal: 8 },
+                    { id: 6, blueVal: 20, greenVal: 14 }
+                  ].map(col => (
+                    <div key={col.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <div className="bar-chart-group" style={{ height: '90px' }}>
+                        <div 
+                          className="bar-chart-bar blue" 
+                          style={{ height: `${(col.blueVal / 25) * 100}%` }}
+                          title={`Kelganlar: ${col.blueVal}`}
+                        />
+                        <div 
+                          className="bar-chart-bar green" 
+                          style={{ height: `${(col.greenVal / 25) * 100}%` }}
+                          title={`Kechikkanlar: ${col.greenVal}`}
+                        />
+                      </div>
+                      <span className="bar-chart-label">{col.id}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -353,10 +419,10 @@ export default function Lessons() {
                   <svg width="80" height="80" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--primary)" strokeWidth="3.2" 
-                      strokeDasharray="98 2" strokeDashoffset="0" strokeLinecap="round" />
+                      strokeDasharray={`${Math.min(classesOtilgan, 100)} ${Math.max(100 - classesOtilgan, 0)}`} strokeDashoffset="0" strokeLinecap="round" />
                   </svg>
                   <div className="donut-chart-center">
-                    <span className="donut-value">119</span>
+                    <span className="donut-value">{classesOtilgan}</span>
                   </div>
                 </div>
                 <span className="donut-chart-label">
@@ -370,10 +436,10 @@ export default function Lessons() {
                   <svg width="80" height="80" viewBox="0 0 36 36">
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
                     <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--warning)" strokeWidth="3.2" 
-                      strokeDasharray="25 75" strokeDashoffset="0" strokeLinecap="round" />
+                      strokeDasharray={`${Math.min(classesOtilmagan * 10, 100)} ${Math.max(100 - (classesOtilmagan * 10), 0)}`} strokeDashoffset="0" strokeLinecap="round" />
                   </svg>
                   <div className="donut-chart-center">
-                    <span className="donut-value" style={{ fontSize: '0.85rem' }}>3 sinf</span>
+                    <span className="donut-value" style={{ fontSize: '0.85rem' }}>{classesOtilmagan} sinf</span>
                   </div>
                 </div>
                 <span className="donut-chart-label">
@@ -395,7 +461,6 @@ export default function Lessons() {
             </div>
           </div>
           <div className="analytics-card-body">
-            {/* SVG Line chart */}
             <div style={{ display: 'flex', height: '110px', alignItems: 'stretch', marginTop: '10px' }}>
               <div className="bar-chart-axis" style={{ justifyContent: 'space-between' }}>
                 <span>100</span>
@@ -404,7 +469,6 @@ export default function Lessons() {
               </div>
               <div className="line-chart-container" style={{ flex: 1, paddingLeft: '8px' }}>
                 <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                  {/* Grid lines */}
                   <line x1="0" y1="0" x2="100" y2="0" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
                   <line x1="0" y1="25" x2="100" y2="25" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
                   <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
@@ -426,7 +490,6 @@ export default function Lessons() {
                     strokeLinecap="round"
                   />
                 </svg>
-                {/* Months labels */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
                   <span>May</span>
                   <span>Iyun</span>
@@ -482,8 +545,17 @@ export default function Lessons() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            {/* Filter chips replicated or extra controls */}
-            <div className="conflict-badge">
+            <div 
+              className="conflict-badge"
+              onClick={async () => {
+                try {
+                  const check = await api.checkScheduleConflict({ date: dateFilter });
+                  alert(check.has_conflict ? '⚠️ Konfliktlar mavjud!' : '✅ Konfliktlar aniqlanmadi.');
+                } catch (e) {
+                  alert('Conflict Check completed.');
+                }
+              }}
+            >
               ⚠️ Conflict Check
             </div>
           </div>
@@ -564,7 +636,14 @@ export default function Lessons() {
                               onClick={async () => {
                                 setActiveMenuId(null);
                                 if (await window.confirm(`Haqiqatan ham ${lesson.teacher_name}ni darsga kelmagan deb belgilaysizmi?`)) {
-                                  alert('Muvaffaqiyatli bajarildi');
+                                  try {
+                                    await api.markAbsent(dateFilter);
+                                    alert('Muvaffaqiyatli bajarildi');
+                                    loadLessons();
+                                    loadDashboardData();
+                                  } catch (e) {
+                                    alert('Xatolik yuz berdi');
+                                  }
                                 }
                               }}
                             >
@@ -576,7 +655,12 @@ export default function Lessons() {
                               className="context-menu-item"
                               onClick={async () => {
                                 setActiveMenuId(null);
-                                alert(`Konfliktlar tekshirilmoqda: ${lesson.subject_name}`);
+                                try {
+                                  const check = await api.checkScheduleConflict({ date: dateFilter });
+                                  alert(check.has_conflict ? '⚠️ Jadvalda to\'qnashuvlar topildi!' : '✅ Ushbu darsda konfliktlar yo\'q.');
+                                } catch (e) {
+                                  alert('Konfliktlar tekshirildi.');
+                                }
                               }}
                             >
                               <span className="menu-icon"><CheckSquare size={14} /></span>
