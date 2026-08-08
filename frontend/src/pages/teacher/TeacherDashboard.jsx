@@ -23,7 +23,7 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
-    if (!userStr) { navigate('/'); return; }
+    if (!userStr) { navigate('/login'); return; }
     setProfile(JSON.parse(userStr));
 
     const loadDashboard = async () => {

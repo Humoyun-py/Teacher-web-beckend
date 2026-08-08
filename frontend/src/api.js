@@ -48,7 +48,7 @@ export const request = async (endpoint, options = {}) => {
       // refresh xatolik — login sahifasiga yo'naltirish
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
   }
   if (response.status === 204) return {};

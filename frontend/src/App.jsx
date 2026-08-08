@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AlertTriangle, HelpCircle, Check, X, CheckCircle } from 'lucide-react';
 
 import { pingServer } from './api';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -100,7 +101,7 @@ function App() {
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         localStorage.removeItem('login_time');
-        window.location.href = '/';
+        window.location.href = '/login';
       }
     };
 
@@ -139,7 +140,8 @@ function App() {
     <>
       <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
 
           {/* ── Admin Routes ── */}
           <Route path="/admin" element={<DashboardLayout role="admin" />}>

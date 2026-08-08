@@ -60,7 +60,7 @@ export default function DashboardLayout({ role }) {
 
     if (!token || !userStr || userStr === 'undefined' || userStr === 'null') {
       localStorage.clear();
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -70,12 +70,12 @@ export default function DashboardLayout({ role }) {
     } catch (e) {
       console.error("User data parse error", e);
       localStorage.clear();
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 
     if (!parsedUser) {
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -196,7 +196,7 @@ export default function DashboardLayout({ role }) {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
-    navigate('/');
+    navigate('/login');
   };
 
   const openProfile = () => {
