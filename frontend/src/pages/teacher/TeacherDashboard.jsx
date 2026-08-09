@@ -15,6 +15,7 @@ export default function TeacherDashboard() {
   const [checkinTime, setCheckinTime] = useState(null);
   const [checkoutTime, setCheckoutTime] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [scannerMode, setScannerMode] = useState('check_in'); // 'check_in' or 'check_out'
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const isScanningRef = React.useRef(false);
@@ -83,10 +84,10 @@ export default function TeacherDashboard() {
     }
     
     try {
-      const res = await api.checkIn(scannedData);
+      const res = await api.checkIn(scannedData, scannerMode);
       const att = res.attendance || res;
       
-      if (att.check_out_time) {
+      if (res.scan_type === 'check_out' || att.check_out_time) {
         setIsCheckedOut(true);
         setCheckoutTime(att.check_out_time);
         setShowScanner(false);
@@ -272,88 +273,111 @@ export default function TeacherDashboard() {
       <div className="grid grid-cols-2" style={{ gap: '1.5rem' }}>
 
         {/* QR Check-in & Check-out */}
-        <div className="glass flex-col" style={{ padding: '2rem', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
-          <div style={{
-            width: '90px', height: '90px',
-            background: isCheckedOut ? 'rgba(234,179,8,0.1)' : (isCheckedIn ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)'),
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <QrCode size={44} color={isCheckedOut ? 'var(--warning)' : (isCheckedIn ? 'var(--success)' : 'var(--primary)')} />
+        <div className="glass flex-col" style={{ padding: '2rem', gap: '1.5rem' }}>
+          <div className="flex-between">
+            <h3 className="heading-3" style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <QrCode size={20} color="var(--primary)" /> Ish vaqtini qayd etish
+            </h3>
+            <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+              🕒 {profile?.teacher_profile?.work_start_time?.slice(0, 5) || '08:00'} - {profile?.teacher_profile?.work_end_time?.slice(0, 5) || '17:00'}
+            </span>
           </div>
-          <h3 className="heading-3">
-            {isCheckedOut ? 'Chiqish qayd etildi 🕒' : (isCheckedIn ? 'Kirish qayd etilgan ✅' : 'QR orqali Kirish (Check-in)')}
-          </h3>
 
-          {isCheckedOut ? (
-            <div style={{ padding: '1.25rem', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 'var(--radius-md)', width: '100%' }}>
-              <Clock size={22} color="var(--warning)" style={{ marginBottom: '0.5rem', alignSelf: 'center' }} />
-              <p style={{ color: 'var(--text-main)', fontSize: '0.88rem' }}>
-                Kirish vaqti: <strong>{checkinTime ? new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'}</strong>
-              </p>
-              <p style={{ color: 'var(--warning)', marginTop: '0.4rem', fontWeight: 500, fontSize: '0.88rem' }}>
-                Chiqish vaqti: <strong>{new Date(checkoutTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</strong>
-              </p>
-            </div>
-          ) : isCheckedIn ? (
-            <div className="flex-col gap-3" style={{ width: '100%' }}>
-              <div style={{ padding: '1rem', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 'var(--radius-md)', width: '100%' }}>
-                <CheckCircle size={22} color="var(--success)" style={{ alignSelf: 'center', marginBottom: '0.25rem' }} />
-                <p style={{ color: 'var(--success)', fontWeight: 500, fontSize: '0.88rem' }}>
-                  Siz maktabga soat {checkinTime ? new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '—'} da keldingiz.
-                </p>
+          {showScanner ? (
+            <div className="flex-col gap-4" style={{ alignItems: 'center' }}>
+              <div style={{ padding: '0.5rem 1rem', background: scannerMode === 'check_in' ? 'rgba(99, 102, 241, 0.1)' : 'rgba(234, 179, 8, 0.1)', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, color: scannerMode === 'check_in' ? 'var(--primary)' : 'var(--warning)' }}>
+                {scannerMode === 'check_in' ? '🟢 ISH BOSHLASH (Check-in) skanerlash' : '🟡 ISH TUGATISH (Check-out) skanerlash'}
               </div>
-              
-              {!showScanner ? (
-                <button className="btn btn-warning" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowScanner(true)}>
-                  <Camera size={17} /> Chiqish (Check-out) qilish
-                </button>
-              ) : (
-                <div style={{ width: '100%', maxWidth: '280px', alignSelf: 'center' }}>
-                  <div style={{ border: '2px solid var(--warning)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                    <Scanner
-                      onScan={handleScanCode}
-                      onError={() => {}}
-                      components={{ audio: false, finder: false }}
-                    />
-                  </div>
-                  {scanning && (
-                    <div className="flex-center gap-2" style={{ marginTop: '0.75rem', color: 'var(--warning)' }}>
-                      <Loader size={14} className="spinner" /> Tekshirilmoqda...
-                    </div>
-                  )}
-                  <button className="btn btn-outline" style={{ width: '100%', marginTop: '0.75rem' }} onClick={() => setShowScanner(false)}>
-                    Bekor qilish
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : showScanner ? (
-            <div style={{ width: '100%', maxWidth: '280px', alignSelf: 'center' }}>
-              <div style={{ border: '2px solid var(--primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+
+              <div style={{ width: '100%', maxWidth: '280px', border: `2px solid ${scannerMode === 'check_in' ? 'var(--primary)' : 'var(--warning)'}`, borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                 <Scanner
                   onScan={handleScanCode}
                   onError={() => {}}
                   components={{ audio: false, finder: false }}
                 />
               </div>
+
               {scanning && (
-                <div className="flex-center gap-2" style={{ marginTop: '0.75rem', color: 'var(--primary)' }}>
+                <div className="flex-center gap-2" style={{ color: scannerMode === 'check_in' ? 'var(--primary)' : 'var(--warning)' }}>
                   <Loader size={14} className="spinner" /> Tekshirilmoqda...
                 </div>
               )}
-              <button className="btn btn-outline" style={{ width: '100%', marginTop: '0.75rem' }} onClick={() => setShowScanner(false)}>
-                Bekor qilish
+
+              <button className="btn btn-outline" style={{ width: '100%', maxWidth: '280px' }} onClick={() => setShowScanner(false)}>
+                Skanerni yopish
               </button>
             </div>
           ) : (
-            <div className="flex-col gap-2" style={{ width: '100%' }}>
-              <p className="text-muted" style={{ fontSize: '0.88rem' }}>
-                Maktabdagi QR kodni skanerlab, kelganingizni tasdiqlang.
-              </p>
-              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowScanner(true)}>
-                <Camera size={17} /> Skanerni ochish
-              </button>
+            <div className="flex-col gap-4">
+              {/* Card 1: Ish boshlash */}
+              <div style={{ 
+                padding: '1.25rem', 
+                borderRadius: 'var(--radius-md)', 
+                background: isCheckedIn ? 'rgba(34, 197, 94, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                border: `1px solid ${isCheckedIn ? 'rgba(34, 197, 94, 0.2)' : 'var(--surface-border)'}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div className="flex-col gap-1">
+                  <span style={{ fontWeight: 600, fontSize: '0.95rem', color: isCheckedIn ? 'var(--success)' : 'var(--text-main)' }}>
+                    {isCheckedIn ? '🟢 Ish boshlangan' : '⚪ Ish boshlash (Check-in)'}
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '0.8rem' }}>
+                    {isCheckedIn 
+                      ? `Kirish vaqti: ${new Date(checkinTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Ish kunini boshlash uchun QR kodni skanerlang'}
+                  </span>
+                </div>
+                {!isCheckedIn ? (
+                  <button className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => {
+                    setScannerMode('check_in');
+                    setShowScanner(true);
+                  }}>
+                    <Camera size={14} /> Ish boshlash
+                  </button>
+                ) : (
+                  <span className="badge badge-success">Tasdiqlandi</span>
+                )}
+              </div>
+
+              {/* Card 2: Ish yakunlash */}
+              <div style={{ 
+                padding: '1.25rem', 
+                borderRadius: 'var(--radius-md)', 
+                background: isCheckedOut ? 'rgba(234, 179, 8, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                border: `1px solid ${isCheckedOut ? 'rgba(234, 179, 8, 0.2)' : 'var(--surface-border)'}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                opacity: !isCheckedIn ? 0.6 : 1
+              }}>
+                <div className="flex-col gap-1">
+                  <span style={{ fontWeight: 600, fontSize: '0.95rem', color: isCheckedOut ? 'var(--warning)' : 'var(--text-main)' }}>
+                    {isCheckedOut ? '🟡 Ish yakunlandi' : '⚪ Ish yakunlash (Check-out)'}
+                  </span>
+                  <span className="text-muted" style={{ fontSize: '0.8rem' }}>
+                    {isCheckedOut 
+                      ? `Chiqish vaqti: ${new Date(checkoutTime).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Ish yakunlanganda chiqish vaqtini qayd qiling'}
+                  </span>
+                </div>
+                {isCheckedOut ? (
+                  <span className="badge badge-warning">Tugallandi</span>
+                ) : (
+                  <button 
+                    className="btn btn-warning" 
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} 
+                    disabled={!isCheckedIn}
+                    onClick={() => {
+                      setScannerMode('check_out');
+                      setShowScanner(true);
+                    }}
+                  >
+                    <Camera size={14} /> Ish yakunlash
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

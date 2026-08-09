@@ -9,7 +9,7 @@ export default function TeachersList() {
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
+  const [newTeacher, setNewTeacher] = useState({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '', work_start_time: '08:00', work_end_time: '17:00' });
 
   // Salary report state
   const [showSalaryModal, setShowSalaryModal] = useState(false);
@@ -76,13 +76,15 @@ export default function TeachersList() {
       phone: teacher.phone || '',
       monthly_salary: teacher.monthly_salary || '',
       lesson_rate: teacher.lesson_rate || '',
+      work_start_time: teacher.work_start_time ? teacher.work_start_time.slice(0, 5) : '08:00',
+      work_end_time: teacher.work_end_time ? teacher.work_end_time.slice(0, 5) : '17:00',
     });
     setShowModal(true);
   };
 
   const handleOpenCreateModal = () => {
     setEditingTeacher(null);
-    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
+    setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '', work_start_time: '08:00', work_end_time: '17:00' });
     setShowModal(true);
   };
 
@@ -105,7 +107,7 @@ export default function TeachersList() {
         alert('✅ O\'qituvchi muvaffaqiyatli yaratildi!');
       }
       setShowModal(false);
-      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '' });
+      setNewTeacher({ first_name: '', last_name: '', username: '', password: '', phone: '', monthly_salary: '', lesson_rate: '', work_start_time: '08:00', work_end_time: '17:00' });
       setEditingTeacher(null);
       await loadTeachers();
     } catch (err) {
@@ -218,7 +220,10 @@ export default function TeachersList() {
                         </div>
                         <div className="flex-col">
                           <span style={{ fontWeight: 500 }}>{teacher.full_name || `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || 'Ism kiritilmagan'}</span>
-                          <span className="text-muted" style={{ fontSize: '0.75rem' }}>{teacher.employee_id || 'ID yo\'q'}</span>
+                          <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                            {teacher.employee_id || 'ID yo\'q'}
+                            {teacher.work_start_time && ` • 🕒 ${teacher.work_start_time.slice(0, 5)} - ${teacher.work_end_time.slice(0, 5)}`}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -361,6 +366,29 @@ export default function TeachersList() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>🕒 Ish boshlash vaqti</label>
+                  <input
+                    required
+                    type="time"
+                    className="input-field"
+                    value={newTeacher.work_start_time}
+                    onChange={e => setNewTeacher({ ...newTeacher, work_start_time: e.target.value })}
+                  />
+                </div>
+                <div className="input-group">
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block' }}>🕒 Ish tugash vaqti</label>
+                  <input
+                    required
+                    type="time"
+                    className="input-field"
+                    value={newTeacher.work_end_time}
+                    onChange={e => setNewTeacher({ ...newTeacher, work_end_time: e.target.value })}
+                  />
+                </div>
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }} disabled={isSubmitting}>

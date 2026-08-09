@@ -27,7 +27,7 @@ from .serializers import (
 from accounts.permissions import IsAdmin, IsTeacher, IsAdminOrReadOnly
 from teachers.models import Teacher
 
-# Default expected arrival time (can be made configurable)
+# Default expected arrival time (fallback if teacher has no work_start_time)
 EXPECTED_ARRIVAL_TIME = time(8, 0)  # 8:00 AM
 
 
@@ -148,6 +148,9 @@ class QRCheckInView(APIView):
         serializer = QRCheckInSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # scan_type: 'check_in' yoki 'check_out' (ixtiyoriy)
+        scan_type = request.data.get('scan_type', '').strip().lower()
+
         try:
             teacher = request.user.teacher_profile
         except Teacher.DoesNotExist:
@@ -165,33 +168,61 @@ class QRCheckInView(APIView):
             teacher=teacher, date=today,
         ).first()
 
-        # Determine if check-in or check-out
-        if existing and existing.check_in_time:
-            # If already checked out
-            if existing.check_out_time:
+        # ── SCAN_TYPE = CHECK_OUT ──
+        if scan_type == 'check_out':
+            if not existing or not existing.check_in_time:
                 return Response(
-                    {'error': 'Bugun kirish va chiqish allaqachon qayd etilgan.'},
+                    {'error': 'Avval kirish (check-in) qilishingiz kerak!'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
-            # This is check-out scan
+            if existing.check_out_time:
+                return Response(
+                    {'error': 'Bugun chiqish allaqachon qayd etilgan.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             existing.check_out_time = now
             existing.save()
             return Response({
                 'message': 'Chiqish (Check-out) muvaffaqiyatli!',
+                'scan_type': 'check_out',
                 'attendance': AttendanceSerializer(existing).data,
             })
 
-        # This is check-in scan
+        # ── SCAN_TYPE = CHECK_IN (yoki auto-detect) ──
+        if scan_type == 'check_in' or not scan_type:
+            # Agar scan_type = check_in va allaqachon check-in qilingan bo'lsa
+            if existing and existing.check_in_time:
+                if scan_type == 'check_in':
+                    return Response(
+                        {'error': 'Bugun kirish allaqachon qayd etilgan.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # auto-detect rejimi: check_out qilish
+                if existing.check_out_time:
+                    return Response(
+                        {'error': 'Bugun kirish va chiqish allaqachon qayd etilgan.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                existing.check_out_time = now
+                existing.save()
+                return Response({
+                    'message': 'Chiqish (Check-out) muvaffaqiyatli!',
+                    'scan_type': 'check_out',
+                    'attendance': AttendanceSerializer(existing).data,
+                })
+
+        # This is a fresh check-in scan
+        # Teacher's own work_start_time yoki global default
+        teacher_start = getattr(teacher, 'work_start_time', None) or EXPECTED_ARRIVAL_TIME
+
         # Cutoff time: 12:00 PM local time
         cutoff_time = now.replace(hour=12, minute=0, second=0, microsecond=0)
         is_after_noon = now > cutoff_time
 
-        # Calculate if late
-        # EXPECTED_ARRIVAL_TIME is local time (8:00 AM)
+        # Calculate if late using teacher-specific start time
         expected_time = now.replace(
-            hour=EXPECTED_ARRIVAL_TIME.hour,
-            minute=EXPECTED_ARRIVAL_TIME.minute,
+            hour=teacher_start.hour,
+            minute=teacher_start.minute,
             second=0,
             microsecond=0
         )
@@ -228,6 +259,7 @@ class QRCheckInView(APIView):
 
         return Response({
             'message': 'Kirish (Check-in) muvaffaqiyatli!' if not is_after_noon else 'Kirish qayd etildi, lekin soat 12:00 dan keyin bo\'lgani uchun bugungi kunga haq yozilmaydi!',
+            'scan_type': 'check_in',
             'is_late': is_late,
             'late_minutes': late_minutes,
             'penalty_amount': str(penalty_amount),

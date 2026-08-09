@@ -171,7 +171,7 @@ export const api = {
   generateStaticQR: () => request('/attendance/qrcodes/generate_static/', { method: 'POST' }),
 
   // QR Check-in (Teacher)
-  checkIn: (qr_code) => request('/attendance/check-in/', { method: 'POST', body: JSON.stringify({ qr_code }) }),
+  checkIn: (qr_code, scan_type = '') => request('/attendance/check-in/', { method: 'POST', body: JSON.stringify({ qr_code, scan_type }) }),
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ANALYTICS — /api/v1/analytics/

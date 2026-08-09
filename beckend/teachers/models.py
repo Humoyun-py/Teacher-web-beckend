@@ -3,6 +3,7 @@ Models for teachers app.
 Teacher profiles, subjects, and class assignments.
 """
 
+from datetime import time
 from django.db import models
 from django.conf import settings
 from accounts.models import SoftDeleteModel
@@ -125,6 +126,16 @@ class Teacher(SoftDeleteModel):
     minute_rate = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
         verbose_name='Daqiqalik maosh',
+    )
+    work_start_time = models.TimeField(
+        default=time(8, 0),
+        verbose_name='Ish boshlanish vaqti',
+        help_text='O\'qituvchining ish kunining boshlanish vaqti (masalan: 08:00)',
+    )
+    work_end_time = models.TimeField(
+        default=time(17, 0),
+        verbose_name='Ish tugash vaqti',
+        help_text='O\'qituvchining ish kunining tugash vaqti (masalan: 17:00)',
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
